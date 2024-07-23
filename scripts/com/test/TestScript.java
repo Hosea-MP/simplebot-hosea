@@ -1,12 +1,23 @@
 package com.test;
 
 import simple.robot.script.Script;
+import simple.hooks.scripts.ScriptManifest;
 import simple.robot.api.ClientContext;
 import simple.hooks.wrappers.SimpleNpc;
 import simple.hooks.filters.SimpleNpcs;
+import simple.hooks.scripts.Category;
 
 import java.awt.*;
 
+@ScriptManifest(
+        author = "YourName",
+        name = "TestScript",
+        category = Category.OTHER,
+        version = "1.0",
+        description = "A script to find the nearest NPC based on user input",
+        discord = "your_discord",
+        servers = {"server1", "server2"}
+)
 public class TestScript extends Script {
 
     @Override
