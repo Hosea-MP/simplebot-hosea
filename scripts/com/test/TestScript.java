@@ -20,6 +20,18 @@ import java.awt.*;
 )
 public class TestScript extends Script {
 
+    private static String type;
+    private static String id;
+    private static String name;
+    private static String interactionText;
+
+    public static void setUserInputs(String type, String id, String name, String interactionText) {
+        TestScript.type = type;
+        TestScript.id = id;
+        TestScript.name = name;
+        TestScript.interactionText = interactionText;
+    }
+
     @Override
     public void onExecute() {
         // Initialization code if needed
@@ -28,7 +40,7 @@ public class TestScript extends Script {
     @Override
     public void onProcess() {
         // Example user input for NPC name
-        String npcName = "Goblin"; // This should be replaced with actual user input
+        String npcName = name; // Use the name provided by the user
 
         // Get the nearest NPC with the specified name
         SimpleNpc nearestNpc = getNearestNpc(npcName);
@@ -58,5 +70,13 @@ public class TestScript extends Script {
     @Override
     public void paint(Graphics graphics) {
 
+    }
+
+    public static void startScript() {
+        // Logic to start the script
+        // This method can be called from the plugin panel
+        ClientContext.instance().log("Starting script...");
+        // Assuming the script is already running, we just need to set the inputs
+        // and let the task system handle the rest.
     }
 }
