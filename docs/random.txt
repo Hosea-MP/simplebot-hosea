@@ -3984,7 +3984,7 @@ import simple.api.script.Script;
 import simple.api.script.ScriptManifest;
 import simple.api.script.interfaces.SimplePaintable;
 import simple.api.wrappers.SimpleActor;
-import simple.api.wrappers.SimpleNpc;
+import simple.hooks.wrappers.SimpleNpc;
 import simple.bot.internal.INpc;
 
 import java.awt.*;
