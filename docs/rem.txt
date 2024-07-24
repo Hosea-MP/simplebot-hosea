@@ -1,0 +1,2649 @@
+*GitHub Repository "the-reminisce/simplebot-vulcan-tasks"*
+
+'''--- src/me/remie/vulcan/leaguetasks/LeagueScript.java ---
+package me.remie.vulcan.leaguetasks;
+
+import me.remie.vulcan.leaguetasks.data.LeagueScriptConstants;
+import me.remie.vulcan.leaguetasks.helpers.TeleporterScrollHelper;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import me.remie.vulcan.leaguetasks.task.tasks.CraftGhorrockTablet;
+import me.remie.vulcan.leaguetasks.task.tasks.EquipElementalStaff;
+import me.remie.vulcan.leaguetasks.task.tasks.EquipGodBook;
+import me.remie.vulcan.leaguetasks.task.tasks.EquipMithrilGloves;
+import me.remie.vulcan.leaguetasks.task.tasks.LunarIsleBank;
+import me.remie.vulcan.leaguetasks.task.tasks.OpenLeaguesMenu;
+import me.remie.vulcan.leaguetasks.task.tasks.agility.DraynorRooftopAgility;
+import me.remie.vulcan.leaguetasks.task.tasks.agility.TreeGnomeAgility;
+import me.remie.vulcan.leaguetasks.task.tasks.agility.VarrockRooftopAgility;
+import me.remie.vulcan.leaguetasks.task.tasks.emotes.EmoteExplore;
+import me.remie.vulcan.leaguetasks.task.tasks.emotes.EmoteUriTransformation;
+import me.remie.vulcan.leaguetasks.task.tasks.slayer.CheckSlayerTask;
+import me.remie.vulcan.leaguetasks.task.tasks.slayer.SlayerTaskDuradel;
+import me.remie.vulcan.leaguetasks.task.tasks.thieving.ThievingLevel20;
+import me.remie.vulcan.leaguetasks.task.tasks.thieving.ThievingPickpocketMan;
+import me.remie.vulcan.leaguetasks.task.tasks.thieving.ThievingStealSilk;
+import me.remie.vulcan.leaguetasks.task.tasks.travel.TravelDeathsDomain;
+import me.remie.vulcan.leaguetasks.task.tasks.travel.TravelFossilIsland;
+import me.remie.vulcan.leaguetasks.task.tasks.travel.TravelMosleHarmless;
+import me.remie.vulcan.leaguetasks.task.tasks.travel.TravelSpiritTrees;
+import me.remie.vulcan.leaguetasks.task.tasks.woodcutting.tasks.ChopMagicLogs;
+import me.remie.vulcan.leaguetasks.task.tasks.woodcutting.tasks.ChopNormalLogs;
+import me.remie.vulcan.leaguetasks.task.tasks.woodcutting.tasks.ChopWillowLogs;
+import me.remie.vulcan.leaguetasks.utils.LeaguePanel;
+
+import net.runelite.api.ChatMessageType;
+import simple.hooks.scripts.Category;
+import simple.hooks.scripts.LoopingScript;
+import simple.hooks.scripts.ScriptManifest;
+import simple.hooks.simplebot.ChatMessage;
+
+import simple.hooks.wrappers.SimpleNpc;
+import simple.hooks.wrappers.SimpleWidget;
+import simple.robot.script.Script;
+import simple.robot.utils.ScriptUtils;
+
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 08:44 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+@ScriptManifest(author = "Reminisce", name = "RLeagues Tasks", category = Category.OTHER,
+        version = "0.0.1", description = "Completes a ton of leagues tasks", discord = "reminisce", servers = {"Vulcan"}, vip = true)
+public class LeagueScript extends Script implements LoopingScript, MouseListener {
+
+    private long startTime;
+    private String status;
+
+    private boolean checkedTasks;
+    private LeagueTask currentTask;
+    private int pointsGained, pointsTotal;
+    private List<LeagueTask> tasks;
+
+    private LeagueScriptPaint paintHelper;
+
+    private TeleporterScrollHelper teleporterScrollHelper;
+
+    private final Pattern POINTS_PATTERN = Pattern.compile("you have earned ([\\d,]+) league points\\. you now have ([\\d,]+) league points\\.");
+
+    private LeaguePanel leaguePanel;
+
+    @Override
+    public void onExecute() {
+        this.startTime = System.currentTimeMillis();
+        this.leaguePanel = new LeaguePanel(ctx);
+        this.status = "Waiting to start...";
+        this.tasks = Arrays.asList(
+                new OpenLeaguesMenu(this),
+                new EmoteExplore(this),
+                new EmoteUriTransformation(this),
+                new EquipMithrilGloves(this),
+                new EquipElementalStaff(this),
+                new SlayerTaskDuradel(this),
+                new CheckSlayerTask(this),
+                new TravelDeathsDomain(this),
+                new TravelSpiritTrees(this),
+                new TravelFossilIsland(this),
+                new TravelMosleHarmless(this),
+                new LunarIsleBank(this),
+                new CraftGhorrockTablet(this),
+                new ThievingLevel20(this),
+                new ThievingStealSilk(this),
+                new EquipGodBook(this),
+                new ThievingPickpocketMan(this),
+                new TreeGnomeAgility(this),
+                new DraynorRooftopAgility(this),
+                new VarrockRooftopAgility(this),
+                new ChopNormalLogs(this),
+                new ChopWillowLogs(this),
+                new ChopMagicLogs(this)
+        );
+        setupPaint();
+        this.teleporterScrollHelper = new TeleporterScrollHelper(ctx);
+    }
+
+    private void setupPaint() {
+        if (this.paintHelper != null) {
+            return;
+        }
+        this.paintHelper = new LeagueScriptPaint(this);
+        this.paintHelper.addLine(() -> "Points: " + ctx.paint.formatValue(this.pointsGained));
+    }
+
+    @Override
+    public void onProcess() {
+        if (!this.checkedTasks) {
+            checkTasks();
+            return;
+        }
+        if (this.currentTask == null || this.currentTask.isCompleted()) {
+            getNewTask();
+            return;
+        }
+        if (!ctx.npcs.populate().filter(LeagueScriptConstants.PILLORY_GUARD_ID).isEmpty() &&
+                !ctx.npcs.filter(n -> n.getInteracting() != null && n.getInteracting().equals(ctx.players.getLocal().getPlayer())).isEmpty()) {
+            final SimpleNpc guard = ctx.npcs.nextNearest();
+            if (guard != null) {
+                guard.menuAction("Dismiss");
+                ctx.sleep(1250);
+                return;
+            }
+        }
+
+        if (ctx.pathing.energyLevel() >= 30 && !ctx.pathing.running()) {
+            ctx.pathing.running(true);
+            return;
+        }
+
+        this.currentTask.run();
+    }
+
+    private void checkTasks() {
+        setScriptStatus("Opening League panel");
+        if (!leaguePanel.openLeaguePanel()) {
+            return;
+        }
+
+        if (leaguePanel.doWeNeedToClearFilters()) {
+            setScriptStatus("Clearing filters");
+            leaguePanel.clearAllFilterOptions();
+            return;
+        }
+
+        final SimpleWidget leaguesWidget = leaguePanel.getLeaguePanelWidget();
+        if (leaguesWidget == null) {
+            return;
+        }
+
+        setScriptStatus("Crunching numbers...");
+        final SimpleWidget[] children = leaguesWidget.getDynamicChildren();
+        if (children == null || children.length == 0) {
+            return;
+        }
+        for (final SimpleWidget child : children) {
+            final String taskName = ScriptUtils.stripHtml(child.getText().toLowerCase());
+            this.tasks.stream().filter(task -> task.getName().equalsIgnoreCase(taskName)).findFirst().ifPresent((task) -> {
+                if (child.getWidget().getTextColor() == 0xff7700) {
+                    task.setCompleted(true);
+                    ctx.log("Task " + task.getName() + " is already completed");
+                }
+            });
+        }
+        ctx.sleep(1500, 2500);
+        ctx.menuActions.clickButton(43057155);
+        ctx.onCondition(() -> {
+            final SimpleWidget leaguesWidget1 = ctx.widgets.getWidget(657, 18);
+            return leaguesWidget1 == null || leaguesWidget1.isHidden();
+        }, 1000, 5);
+        this.checkedTasks = true;
+    }
+
+    private void getNewTask() {
+        if (this.currentTask != null) {
+            this.currentTask.setCompleted(true);
+        }
+        final Optional<LeagueTask> newTask = tasks.stream().filter(task -> !task.isCompleted() && task.canComplete()).findFirst();
+        if (newTask.isPresent()) {
+            this.currentTask = newTask.get();
+        }
+    }
+
+    public boolean isTaskCompleted(final Class<? extends LeagueTask> task) {
+        for (final LeagueTask t : this.tasks) {
+            if (t.getClass().equals(task)) {
+                return t.isCompleted();
+            }
+        }
+        return false;
+    }
+
+    public <T extends LeagueTask> T getTask(final Class<T> task) {
+        for (final LeagueTask t : this.tasks) {
+            if (t.getClass().equals(task)) {
+                return (T) t;
+            }
+        }
+        return null;
+    }
+
+    public long getStartTime() {
+        return this.startTime;
+    }
+
+    public String getScriptStatus() {
+        return this.status;
+    }
+    public void setScriptStatus(String status) {
+        this.status = status;
+    }
+
+    public TeleporterScrollHelper getTeleporterScrollHelper() {
+        return this.teleporterScrollHelper;
+    }
+
+    @Override
+    public void onTerminate() {
+        ctx.log("Gained " + this.pointsGained + " points, total: " + this.pointsTotal);
+    }
+
+    @Override
+    public void onChatMessage(ChatMessage e) {
+        if (this.currentTask != null) {
+            this.currentTask.onChatMessage(e);
+        }
+        if (e.getType() != ChatMessageType.GAMEMESSAGE || e.getSender() != null || !e.getName().isEmpty()) {
+            return;
+        }
+        final String message = ScriptUtils.stripHtml(e.getMessage().toLowerCase());
+        if (message.matches("congratulations, you've completed an? .*leagues task:.*")) {
+            final String taskName = message.split(":")[1].trim();
+            this.tasks.stream().filter(task -> task.getName().equalsIgnoreCase(taskName)).findFirst().ifPresent((task) -> task.setCompleted(true));
+        } else if (message.startsWith("you have earned") && message.contains("league points. you now have")) {
+            final Matcher matcher = POINTS_PATTERN.matcher(message);
+            if (matcher.find()) {
+                final int pointsEarned = Integer.parseInt(matcher.group(1).replace(",", ""));
+                final int totalPoints = Integer.parseInt(matcher.group(2).replace(",", ""));
+                this.pointsGained += pointsEarned;
+                this.pointsTotal = totalPoints;
+                ctx.log("Gained " + pointsEarned + " points, total: " + totalPoints);
+            }
+        }
+    }
+
+    @Override
+    public void paint(final Graphics g1) {
+        if (this.paintHelper == null) {
+            return;
+        }
+        final Graphics2D g = (Graphics2D) g1;
+        this.paintHelper.drawPaint(g);
+    }
+
+    @Override
+    public void mouseClicked(final MouseEvent e) {
+        if (this.paintHelper != null) {
+            this.paintHelper.handleMouseClick(e);
+        }
+    }
+
+    @Override
+    public int loopDuration() {
+        return 150;
+    }
+
+    @Override
+    public void mousePressed(final MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseReleased(final MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseEntered(final MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseExited(final MouseEvent e) {
+
+    }
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/LeagueScriptPaint.java ---
+package me.remie.vulcan.leaguetasks;
+
+import simple.robot.api.ClientContext;
+
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+
+/**
+ * Created by Reminisce on Mar 04, 2023 at 10:01 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class LeagueScriptPaint {
+
+    /**
+     * This field stores the script instance.
+     */
+    private final LeagueScript script;
+
+    private final ClientContext ctx;
+
+    /**
+     * This field stores the name of the script from the manifest.
+     * We store it in a field, so we don't have to call the getName method every time we need it.
+     */
+    private final String scriptName;
+
+    /**
+     * This field stores the version of the script from the manifest.
+     * We store it in a field, so we don't have to call the getManifest method every time we need it.
+     */
+    private final String scriptVersion;
+    private final int MAX_PAINT_WIDTH = 200;
+    private final int MAX_PAINT_HEIGHT = 100;
+    private final List<Callable<String>> lines = new ArrayList<>();
+    private final Color PAINT_TEXT_COLOR = Color.ORANGE.darker();
+    private final Color PAINT_OUTLINE_COLOR = Color.RED.darker();
+    private final Color PAINT_BACKGROUND_COLOR = new Color(0, 0, 0, 220);
+    private final Rectangle PAINT_BOUNDS = new Rectangle(5, 2, MAX_PAINT_WIDTH, MAX_PAINT_HEIGHT);
+    private int versionTitleXPos = -1;
+    private boolean drawingPaint = true;
+
+    /**
+     * @param script The script instance.
+     */
+    public LeagueScriptPaint(final LeagueScript script) {
+        this.ctx = script.ctx;
+        this.script = script;
+        this.scriptName = script.getName();
+        this.scriptVersion = script.getManifest().version();
+
+        // Add the default lines to the paint.
+        addLine(() -> "Runtime: " + ctx.paint.formatTime(System.currentTimeMillis() - script.getStartTime()));
+        addLine(() -> "Status: " + script.getScriptStatus());
+    }
+
+    /**
+     * This method is called every time the paint is drawn.
+     *
+     * @param g the graphics object to draw with
+     */
+    public void drawPaint(Graphics2D g) {
+        if (!drawingPaint) {
+            return;
+        }
+        g.setColor(PAINT_BACKGROUND_COLOR);
+        g.fillRoundRect(PAINT_BOUNDS.x, PAINT_BOUNDS.y, PAINT_BOUNDS.width, PAINT_BOUNDS.height, 10, 10);
+        g.setColor(PAINT_OUTLINE_COLOR);
+        g.drawRoundRect(PAINT_BOUNDS.x, PAINT_BOUNDS.y, PAINT_BOUNDS.width, PAINT_BOUNDS.height, 10, 10);
+        g.drawLine(PAINT_BOUNDS.x, 24, PAINT_BOUNDS.x + PAINT_BOUNDS.width, 24);
+        g.setColor(PAINT_TEXT_COLOR);
+        drawTitleText(g);
+
+        int y = 42;
+        for (Callable<String> line : lines) {
+            try {
+                drawLine(g, line.call(), 12, y);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            y += 14;
+        }
+    }
+
+    /**
+     * This method is used to add dynamic lines to the paint.
+     *
+     * @param line the line to add to the paint
+     */
+    public void addLine(Callable<String> line) {
+        this.lines.add(line);
+        reCalculatePaintBounds();
+    }
+
+    /**
+     * This method recalculates the paint bounds. This is done so that we can dynamically change the size of the paint.
+     */
+    private void reCalculatePaintBounds() {
+        final int height = 30 + (lines.size() * 14);
+        PAINT_BOUNDS.setSize(MAX_PAINT_WIDTH, height);
+    }
+
+    /**
+     * Draws a line of text on the paint.
+     *
+     * @param g    the graphics object to draw with
+     * @param text the text to draw
+     * @param x    the x position to draw the text at
+     * @param y    the y position to draw the text at
+     */
+    private void drawLine(Graphics2D g, String text, int x, int y) {
+        g.drawString(text, x, y);
+    }
+
+    /**
+     * Draws the title text for the paint. This is done in a separate method so that we can cache the x position of the version text.
+     * This is done so that we don't have to calculate the width of the text every time we draw the paint. This is a performance optimization.
+     * We accomplish this by checking if the versionTitleXPos is -1. If it is, we calculate the width of the text and store it in the variable.
+     *
+     * @param g the graphics object to draw with
+     */
+    private void drawTitleText(Graphics2D g) {
+        if (this.versionTitleXPos == -1) {
+            final int textWidthRight = g.getFontMetrics().stringWidth(this.scriptVersion);
+            this.versionTitleXPos = PAINT_BOUNDS.getBounds().width - textWidthRight - 3;
+        }
+        drawLine(g, this.scriptName, 12, 20);
+        drawLine(g, this.scriptVersion, this.versionTitleXPos, 20);
+    }
+
+    /**
+     * Handles mouse clicks for the paint. When the user clicks on the paint, it will toggle the paint on and off.
+     *
+     * @param e the mouse event
+     */
+    public void handleMouseClick(MouseEvent e) {
+        if (PAINT_BOUNDS.contains(e.getPoint())) {
+            this.drawingPaint = !this.drawingPaint;
+        }
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/data/LeagueScriptConstants.java ---
+package me.remie.vulcan.leaguetasks.data;
+
+import net.runelite.api.coords.WorldPoint;
+import simple.robot.utils.WorldArea;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 11:10 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class LeagueScriptConstants {
+
+    public static final int PILLORY_GUARD_ID = 380;
+
+    public static final int LUNAR_ISLE_REGION_ID = 8253;
+    public static final int LUMBRIDGE_REGION_ID = 12850;
+    public static final int GNOME_STRONGHOLD_REGION_ID = 9781;
+
+    public static final WorldArea HOME_AREA = new WorldArea(new WorldPoint(3072, 3521, 0), new WorldPoint(3072, 3464, 0), new WorldPoint(3137, 3474, 0), new WorldPoint(3137, 3521, 0));
+
+    public static final WorldArea WOODCUTTING_GUILD_AREA = new WorldArea(
+            new WorldPoint(1653, 3517, 0),
+            new WorldPoint(1632, 3517, 0),
+            new WorldPoint(1631, 3519, 0),
+            new WorldPoint(1623, 3519, 0),
+            new WorldPoint(1620, 3516, 0),
+            new WorldPoint(1611, 3516, 0),
+            new WorldPoint(1603, 3511, 0),
+            new WorldPoint(1603, 3506, 0),
+            new WorldPoint(1607, 3506, 0),
+            new WorldPoint(1607, 3501, 0),
+            new WorldPoint(1600, 3501, 0),
+            new WorldPoint(1600, 3504, 0),
+            new WorldPoint(1581, 3504, 0),
+            new WorldPoint(1576, 3499, 0),
+            new WorldPoint(1564, 3499, 0),
+            new WorldPoint(1562, 3497, 0),
+            new WorldPoint(1562, 3477, 0),
+            new WorldPoint(1581, 3477, 0),
+            new WorldPoint(1586, 3472, 0),
+            new WorldPoint(1595, 3472, 0),
+            new WorldPoint(1596, 3473, 0),
+            new WorldPoint(1596, 3479, 0),
+            new WorldPoint(1601, 3485, 0),
+            new WorldPoint(1601, 3497, 0),
+            new WorldPoint(1607, 3497, 0),
+            new WorldPoint(1607, 3491, 0),
+            new WorldPoint(1612, 3487, 0),
+            new WorldPoint(1617, 3487, 0),
+            new WorldPoint(1623, 3493, 0),
+            new WorldPoint(1631, 3493, 0),
+            new WorldPoint(1633, 3492, 0),
+            new WorldPoint(1633, 3489, 0),
+            new WorldPoint(1648, 3489, 0),
+            new WorldPoint(1656, 3497, 0),
+            new WorldPoint(1656, 3502, 0),
+            new WorldPoint(1658, 3502, 0),
+            new WorldPoint(1658, 3507, 0),
+            new WorldPoint(1655, 3510, 0),
+            new WorldPoint(1655, 3517, 0)
+    );
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/helpers/ItemDetails.java ---
+package me.remie.vulcan.leaguetasks.helpers;
+
+/**
+ * Created by Reminisce on Mar 07, 2024 at 5:08 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class ItemDetails {
+
+    private final int itemId;
+    private final int requiredCoins;
+    private final String itemName;
+
+    public ItemDetails(final String itemName, final int itemId, final int requiredCoins) {
+        this.itemId = itemId;
+        this.requiredCoins = requiredCoins;
+        this.itemName = itemName;
+    }
+
+    public int getItemId() {
+        return itemId;
+    }
+
+    public int getRequiredCoins() {
+        return requiredCoins;
+    }
+
+    public String getItemName() {
+        return itemName;
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/helpers/TeleporterScrollHelper.java ---
+package me.remie.vulcan.leaguetasks.helpers;
+
+import simple.hooks.wrappers.SimpleWidget;
+import simple.robot.api.ClientContext;
+
+import java.util.Optional;
+
+/**
+ * Created by Reminisce on Mar 06, 2024 at 8:42 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class TeleporterScrollHelper {
+
+    private final ClientContext ctx;
+
+    private static final int TELEPORT_WIDGET_ID = 187;
+
+    public TeleporterScrollHelper(final ClientContext ctx) {
+        this.ctx = ctx;
+    }
+
+    /**
+     * Retrieves the teleport interface widget.
+     *
+     * @return an Optional containing the teleport interface widget if it exists and is visible,
+     *         otherwise an empty Optional
+     */
+    private Optional<SimpleWidget> getWidget() {
+        return Optional.ofNullable(ctx.widgets.getWidget(TELEPORT_WIDGET_ID, 0))
+                .filter(widget -> !widget.isHidden());
+    }
+
+    /**
+     * Checks if the teleport widget is visible.
+     *
+     * @return true if the widget is visible, false otherwise
+     */
+    public boolean isOpen() {
+        return getWidget().isPresent();
+    }
+
+    /**
+     * Sends a teleport action to the teleport interface.
+     *
+     * @param option the option index to select for the teleport action
+     */
+    public void teleport(final int option) {
+        getWidget().ifPresent(widget -> ctx.menuActions.sendAction(30, Math.max(0, option), 12255235, 0, "Continue", ""));
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/helpers/shop/ShopHelper.java ---
+package me.remie.vulcan.leaguetasks.helpers.shop;
+
+import me.remie.vulcan.leaguetasks.helpers.ItemDetails;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import me.remie.vulcan.leaguetasks.task.tasks.thieving.ThievingLevel20;
+import net.runelite.api.coords.WorldPoint;
+import simple.hooks.wrappers.SimpleItem;
+import simple.hooks.wrappers.SimpleNpc;
+import simple.hooks.wrappers.SimpleWidget;
+import simple.robot.api.ClientContext;
+
+/**
+ * Created by Reminisce on Mar 07, 2024 at 5:10 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class ShopHelper {
+
+    private static final int COINS = 995;
+    private static final int SHOP_WIDGET_ID = 836;
+    private static final int SHOP_KEEPER_ID = 7913;
+    private static final WorldPoint SHOP_TILE = new WorldPoint(3077, 3500, 0);
+
+    private final ClientContext ctx;
+    private final LeagueTask task;
+
+    private boolean checkedBank = false;
+    private boolean hasEnoughCoins = false;
+
+    private boolean hasCheckedForItem = false;
+    private boolean hasItem = false;
+
+    public ShopHelper(final LeagueTask task) {
+        this.ctx = task.ctx;
+        this.task = task;
+    }
+
+    public boolean buyItem(final ItemDetails itemDetails, final ShopType shopType) {
+        if (hasItem || (!ctx.inventory.populate().filter(itemDetails.getItemId()).isEmpty() || !ctx.equipment.populate().filter(itemDetails.getItemId()).isEmpty())) {
+            hasItem = true;
+            return true;
+        }
+        if (!checkItemInInventoryAndBank(itemDetails)) {
+            return false;
+        }
+
+        if (!checkAndManageCoins(itemDetails.getRequiredCoins())) {
+            return false;
+        }
+
+        if (!openShop()) {
+            return false;
+        }
+
+        final SimpleWidget shopWidget = getShopWidget();
+        if (isShopOpen(shopWidget)) {
+            if (shopType.getName().equalsIgnoreCase(getShopName(shopWidget))) {
+                ctx.menuActions.sendAction(57, 30, 54788137, 2, itemDetails.getItemId(),
+                        "Buy 1", "<col=ff9040>" + itemDetails.getItemName() + "</col>");
+                return ctx.onCondition(() -> !ctx.inventory.populate().filter(itemDetails.getItemId()).isEmpty() && closeShop(), 250, 10);
+            } else {
+                ctx.menuActions.clickButton(shopType.getMenuActionId());
+                ctx.sleep(500, 1000);
+            }
+        }
+
+        return false;
+    }
+
+    private boolean checkItemInInventoryAndBank(final ItemDetails itemDetails) {
+        if (hasCheckedForItem) {
+            return true;
+        }
+        if (!ctx.inventory.populate().filter(itemDetails.getItemId()).isEmpty() || !ctx.equipment.populate().filter(itemDetails.getItemId()).isEmpty()) {
+            hasItem = true;
+            hasCheckedForItem = true;
+            return true;
+        }
+        if (!checkedBank) {
+            if (!task.teleportHome()) {
+                return false;
+            }
+            if (ctx.bank.openBank()) {
+                ctx.sleep(500, 1000);
+                if (!ctx.bank.populate().filter(itemDetails.getItemId()).isEmpty()) {
+                    hasItem = true;
+                    final SimpleItem item = ctx.bank.next();
+                    if (item != null) {
+                        item.menuAction("withdraw-1");
+                        ctx.onCondition(() -> ctx.inventory.populate().filter(itemDetails.getItemId()).population(true) > 0, 250, 10);
+                    }
+                }
+                hasCheckedForItem = true;
+                ctx.bank.closeBank();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean checkAndManageCoins(final int requiredCoins) {
+        if (checkedBank && hasEnoughCoins) {
+            return true;
+        }
+
+        int coinsInInventory = ctx.inventory.populate().filter(COINS).population(true);
+        if (coinsInInventory >= requiredCoins) {
+            checkedBank = true;
+            hasEnoughCoins = true;
+            return true;
+        }
+
+        if (!checkedBank) {
+            if (ctx.bank.openBank()) {
+                ctx.sleep(500, 1000);
+                int coinsInBank = ctx.bank.populate().filter(COINS).population(true);
+                if (coinsInInventory + coinsInBank >= requiredCoins) {
+                    hasEnoughCoins = true;
+                    final SimpleItem coins = ctx.bank.next();
+                    if (coins != null) {
+                        final int coinsToWithdraw = requiredCoins - coinsInInventory;
+                        coins.menuAction("withdraw-x");
+                        if (ctx.onCondition(ctx.dialogue::pendingInput, 250, 10)) {
+                            ctx.keyboard.sendKeys(String.valueOf(coinsToWithdraw), true);
+                        }
+                        ctx.onCondition(() -> ctx.inventory.populate().filter(COINS).population(true) >= requiredCoins, 250, 10);
+                    }
+                }
+                ctx.bank.closeBank();
+                checkedBank = true;
+            }
+        }
+
+        if (!hasEnoughCoins) {
+            task.script.getTask(ThievingLevel20.class).run();
+            return false;
+        }
+
+        return ctx.inventory.populate().filter(COINS).population(true) >= requiredCoins;
+    }
+
+    public boolean openShop() {
+        if (!task.teleportHome()) {
+            return false;
+        }
+        if (isShopOpen()) {
+            return true;
+        }
+        if (!ctx.pathing.onTile(SHOP_TILE)) {
+            ctx.menuActions.step(SHOP_TILE);
+            ctx.sleep(500, 1000);
+            return false;
+        }
+
+        final SimpleNpc shopNpc = ctx.npcs.populate().filter(SHOP_KEEPER_ID).next();
+        if (shopNpc != null) {
+            shopNpc.menuAction("Trade");
+            return ctx.onCondition(this::isShopOpen, 250, 10);
+        }
+
+        return false;
+    }
+
+    public boolean closeShop() {
+        if (!isShopOpen()) {
+            return true;
+        }
+
+        final SimpleWidget widget = ctx.widgets.getWidget(SHOP_WIDGET_ID, 10);
+        if (widget != null) {
+            widget.click(1);
+            return ctx.onCondition(() -> !isShopOpen(), 500, 5);
+        }
+
+        return false;
+    }
+
+    private SimpleWidget getShopWidget() {
+        return ctx.widgets.getWidget(SHOP_WIDGET_ID, 14);
+    }
+
+    private boolean isShopOpen() {
+        return isShopOpen(getShopWidget());
+    }
+
+    private boolean isShopOpen(final SimpleWidget shopWidget) {
+        return shopWidget != null && !shopWidget.isHidden();
+    }
+
+    private String getShopName(final SimpleWidget shopWidget) {
+        if (!isShopOpen(shopWidget)) {
+            return null;
+        }
+        return shopWidget.getText();
+    }
+
+    public boolean hasItem() {
+        return this.hasItem;
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/helpers/shop/ShopType.java ---
+package me.remie.vulcan.leaguetasks.helpers.shop;
+
+/**
+ * Created by Reminisce on Mar 07, 2024 at 5:17 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public enum ShopType {
+
+    MELEE("melee"),
+    RANGE("range"),
+    MAGIC("magic"),
+    GENERAL_STORE("general store"),
+    VULCAN_TOKENS("vulcan tokens"),
+    GENERAL_SUPPLIES("general supplies"),
+    CONSTRUCTION("construction"),
+    IRONMAN("ironman"),
+    CUSTOM("all custom items on vulcan");
+
+    private final String name;
+    private final int menuActionId;
+
+    ShopType(final String name) {
+        this.name = name;
+        this.menuActionId = 54788112 + (ordinal() * 2);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getMenuActionId() {
+        return menuActionId;
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/LeagueTask.java ---
+package me.remie.vulcan.leaguetasks.task;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.data.LeagueScriptConstants;
+import me.remie.vulcan.leaguetasks.helpers.TeleporterScrollHelper;
+import me.remie.vulcan.leaguetasks.task.requirement.ItemRequirement;
+import me.remie.vulcan.leaguetasks.task.requirement.SkillRequirement;
+import simple.hooks.simplebot.ChatMessage;
+import simple.robot.api.ClientContext;
+
+import java.util.Optional;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 8:54 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public abstract class LeagueTask {
+
+    public final LeagueScript script;
+    public final ClientContext ctx;
+
+    private boolean isCompleted;
+    private final String name;
+    private SkillRequirement skillRequirement;
+    private ItemRequirement itemRequirement;
+
+    public LeagueTask(final LeagueScript script, final String name) {
+        this.script = script;
+        this.ctx = script.ctx;
+        this.name = name;
+        this.isCompleted = false;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public boolean isCompleted() {
+        return this.isCompleted;
+    }
+
+    public void setCompleted(boolean completed) {
+        this.isCompleted = completed;
+    }
+
+    public void setSkillRequirement(SkillRequirement skillRequirement) {
+        this.skillRequirement = skillRequirement;
+    }
+
+    public void setItemRequirement(ItemRequirement itemRequirement) {
+        this.itemRequirement = itemRequirement;
+    }
+
+    public Optional<SkillRequirement> getSkillRequirement() {
+        return Optional.ofNullable(this.skillRequirement);
+    }
+
+    public Optional<ItemRequirement> getItemRequirement() {
+        return Optional.ofNullable(this.itemRequirement);
+    }
+
+    public boolean canComplete() {
+        if (this.skillRequirement != null) {
+            if (!this.skillRequirement.isMet()) {
+                return false;
+            }
+        }
+        if (this.itemRequirement != null) {
+            return this.itemRequirement.isMet();
+        }
+        return true;
+    }
+
+    public abstract void run();
+
+    public void onChatMessage(final ChatMessage e) {
+    }
+
+    // Helpers
+
+    public TeleporterScrollHelper getTeleporterScrollHelper() {
+        return this.script.getTeleporterScrollHelper();
+    }
+
+    public boolean isAtHome() {
+        return LeagueScriptConstants.HOME_AREA.within();
+    }
+
+    public boolean teleportHome() {
+        if (isAtHome()) {
+            return true;
+        }
+        script.setScriptStatus("Teleporting home");
+        ctx.chat.sendMessage("::home");
+        return ctx.onCondition(this::isAtHome, 350, 10);
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/requirement/ItemRequirement.java ---
+package me.remie.vulcan.leaguetasks.task.requirement;
+
+import simple.hooks.wrappers.SimpleItem;
+import simple.robot.api.ClientContext;
+
+import java.util.Map;
+import java.util.stream.Collectors;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 8:59 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class ItemRequirement extends Requirement {
+
+    private final Map<Integer, Integer> itemRequirements;
+
+    public ItemRequirement(final ClientContext ctx, final Map<Integer, Integer> itemRequirements) {
+        super(ctx);
+        this.itemRequirements = itemRequirements;
+    }
+
+    @Override
+    public boolean isMet() {
+        final Map<Integer, Integer> items = ctx.inventory.populate().toStream()
+                .collect(Collectors.groupingBy(SimpleItem::getId, Collectors.summingInt(SimpleItem::getQuantity)));
+        for (final Map.Entry<Integer, Integer> entry : this.itemRequirements.entrySet()) {
+            final int itemId = entry.getKey();
+            final int requiredQuantity = entry.getValue();
+            final int currentQuantity = items.getOrDefault(itemId, 0);
+            if (currentQuantity < requiredQuantity) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/requirement/Requirement.java ---
+package me.remie.vulcan.leaguetasks.task.requirement;
+
+import simple.robot.api.ClientContext;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 8:55 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public abstract class Requirement {
+
+    public final ClientContext ctx;
+
+    public Requirement(final ClientContext ctx) {
+        this.ctx = ctx;
+    }
+
+    public abstract boolean isMet();
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/requirement/SkillRequirement.java ---
+package me.remie.vulcan.leaguetasks.task.requirement;
+
+import simple.hooks.filters.SimpleSkills;
+import simple.robot.api.ClientContext;
+
+import java.util.Map;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 8:55 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class SkillRequirement extends Requirement {
+
+    private final Map<SimpleSkills.Skills, Integer> skillRequirements;
+
+    public SkillRequirement(final ClientContext ctx, final Map<SimpleSkills.Skills, Integer> skillRequirements) {
+        super(ctx);
+        this.skillRequirements = skillRequirements;
+    }
+
+    @Override
+    public boolean isMet() {
+        for (final Map.Entry<SimpleSkills.Skills, Integer> entry : this.skillRequirements.entrySet()) {
+            final SimpleSkills.Skills skill = entry.getKey();
+            final int requiredLevel = entry.getValue();
+            final int currentLevel = ctx.skills.realLevel(skill);
+            if (currentLevel < requiredLevel) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/CraftGhorrockTablet.java ---
+package me.remie.vulcan.leaguetasks.task.tasks;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.data.LeagueScriptConstants;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import net.runelite.api.coords.WorldPoint;
+import simple.hooks.wrappers.SimpleObject;
+
+/**
+ * Created by Reminisce on Mar 06, 2024 at 11:21 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class CraftGhorrockTablet extends LeagueTask {
+
+    private static final WorldPoint LECTERN_TILE = new WorldPoint(2078, 3914, 0);
+
+    /**
+     * While completing this task, we will also complete the following tasks:
+     * - Create a Catherby Teleport Tablet
+     */
+    public CraftGhorrockTablet(final LeagueScript script) {
+        super(script, "Craft a Ghorrock Teleport Tablet");
+    }
+
+    @Override
+    public void run() {
+        if (!ctx.pathing.regionLoaded(LeagueScriptConstants.LUNAR_ISLE_REGION_ID)) {
+            if (!teleportHome()) {
+                return;
+            }
+            if (ctx.teleporter.open()) {
+                script.setScriptStatus("Teleporting to Lunar isle");
+                ctx.teleporter.teleportStringPath("Cities", "Lunar isle");
+                ctx.onCondition(() -> ctx.pathing.regionLoaded(LeagueScriptConstants.LUNAR_ISLE_REGION_ID), 250, 10);
+                return;
+            }
+        }
+        if (!ctx.pathing.onTile(LECTERN_TILE)) {
+            script.setScriptStatus("Navigating to lectern");
+            ctx.menuActions.step(LECTERN_TILE);
+            ctx.sleep(500, 1000);
+            return;
+        }
+        final SimpleObject lectern = ctx.objects.populate().filter("Lectern").nextNearest();
+        if (lectern == null) {
+            return;
+        }
+        script.setScriptStatus("Crafting Ghorrock tablet");
+        lectern.menuAction("Study");
+        ctx.onCondition(this::isCompleted, 350, 10);
+    }
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/EquipElementalStaff.java ---
+package me.remie.vulcan.leaguetasks.task.tasks;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import me.remie.vulcan.leaguetasks.task.requirement.ItemRequirement;
+import simple.hooks.wrappers.SimpleItem;
+
+import java.util.Map;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 9:40 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class EquipElementalStaff extends LeagueTask {
+
+    private final int STAFF_OF_FIRE = 1387;
+
+    public EquipElementalStaff(final LeagueScript script) {
+        super(script, "Equip an Elemental Staff");
+        setItemRequirement(new ItemRequirement(ctx, Map.of(STAFF_OF_FIRE, 1)));
+    }
+
+    @Override
+    public void run() {
+        final SimpleItem staff = ctx.inventory.populate().filter(STAFF_OF_FIRE).next();
+        if (staff != null) {
+            script.setScriptStatus("Equipping Elemental staff");
+            staff.menuAction("Wear");
+            ctx.sleep(1000);
+        }
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/EquipGodBook.java ---
+package me.remie.vulcan.leaguetasks.task.tasks;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.helpers.ItemDetails;
+import me.remie.vulcan.leaguetasks.helpers.shop.ShopHelper;
+import me.remie.vulcan.leaguetasks.helpers.shop.ShopType;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import simple.hooks.wrappers.SimpleItem;
+
+/**
+ * Created by Reminisce on Mar 06, 2024 at 11:31 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class EquipGodBook extends LeagueTask {
+
+    private static final int UNHOLY_BOOK = 3840;
+    private static final ItemDetails itemDetails = new ItemDetails("Unholy book", UNHOLY_BOOK, 45_000);
+
+    private final ShopHelper shopHelper;
+
+    public EquipGodBook(final LeagueScript script) {
+        super(script, "Equip a Completed God Book");
+        this.shopHelper = new ShopHelper(this);
+    }
+
+    @Override
+    public void run() {
+        if (!teleportHome()) {
+            return;
+        }
+        if (!ctx.inventory.populate().filter(UNHOLY_BOOK).isEmpty()) {
+            final SimpleItem book = ctx.inventory.next();
+            if (book != null) {
+                script.setScriptStatus("Equipping God book");
+                book.menuAction("Wear");
+                ctx.onCondition(this::isCompleted, 250, 10);
+            }
+            return;
+        }
+        shopHelper.buyItem(itemDetails, ShopType.MAGIC);
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/EquipMithrilGloves.java ---
+package me.remie.vulcan.leaguetasks.task.tasks;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import me.remie.vulcan.leaguetasks.task.requirement.ItemRequirement;
+import simple.hooks.wrappers.SimpleItem;
+
+import java.util.Map;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 9:40 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class EquipMithrilGloves extends LeagueTask {
+
+    private final int MITHRIL_GLOVES = 7458;
+
+    public EquipMithrilGloves(final LeagueScript script) {
+        super(script, "Equip Some Mithril Gloves");
+        setItemRequirement(new ItemRequirement(ctx, Map.of(MITHRIL_GLOVES, 1)));
+    }
+
+    @Override
+    public void run() {
+        final SimpleItem mithrilGloves = ctx.inventory.populate().filter(MITHRIL_GLOVES).next();
+        if (mithrilGloves != null) {
+            script.setScriptStatus("Equipping Mithril Gloves");
+            mithrilGloves.menuAction("Wear");
+            ctx.sleep(1000);
+        }
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/LunarIsleBank.java ---
+package me.remie.vulcan.leaguetasks.task.tasks;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.data.LeagueScriptConstants;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import net.runelite.api.coords.WorldPoint;
+import simple.hooks.wrappers.SimpleObject;
+
+/**
+ * Created by Reminisce on Mar 06, 2024 at 11:14 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class LunarIsleBank extends LeagueTask {
+
+    private static final WorldPoint BANK_TILE = new WorldPoint(2099, 3919, 0);
+
+    public LunarIsleBank(final LeagueScript script) {
+        super(script, "Use the Bank on Lunar Isle");
+    }
+
+    @Override
+    public void run() {
+        if (!ctx.pathing.regionLoaded(LeagueScriptConstants.LUNAR_ISLE_REGION_ID)) {
+            if (!teleportHome()) {
+                return;
+            }
+            if (ctx.teleporter.open()) {
+                script.setScriptStatus("Teleporting to Lunar isle");
+                ctx.teleporter.teleportStringPath("Cities", "Lunar isle");
+                ctx.onCondition(() -> ctx.pathing.regionLoaded(LeagueScriptConstants.LUNAR_ISLE_REGION_ID), 250, 10);
+                return;
+            }
+        }
+        if (!ctx.pathing.onTile(BANK_TILE)) {
+            script.setScriptStatus("Navigating to bank");
+            ctx.menuActions.step(BANK_TILE);
+            ctx.sleep(500, 1000);
+            return;
+        }
+        final SimpleObject bank = ctx.objects.populate().filter("Bank booth").nextNearest();
+        if (bank == null) {
+            return;
+        }
+        script.setScriptStatus("Opening up bank");
+        bank.menuAction("Bank");
+        if (ctx.onCondition(ctx.bank::bankOpen, 350, 10)) {
+            ctx.bank.closeBank();
+        }
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/OpenLeaguesMenu.java ---
+package me.remie.vulcan.leaguetasks.task.tasks;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 9:16 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class OpenLeaguesMenu extends LeagueTask {
+
+    public OpenLeaguesMenu(final LeagueScript script) {
+        super(script, "Open the Leagues Menu");
+    }
+
+    @Override
+    public void run() {
+        script.setScriptStatus("Opening up Leagues menu");
+        ctx.menuActions.clickButton(42991640);
+        ctx.sleep(1000);
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/agility/DraynorRooftopAgility.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.agility;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import me.remie.vulcan.leaguetasks.task.requirement.SkillRequirement;
+import net.runelite.api.coords.WorldPoint;
+import simple.hooks.filters.SimpleSkills;
+import simple.hooks.wrappers.SimpleObject;
+import simple.robot.utils.WorldArea;
+
+import java.util.Map;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 12:54 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class DraynorRooftopAgility extends LeagueTask {
+
+    private static final int DRAYNOR_REGION_ID = 12338;
+
+    private final WorldArea ROUGH_WALL_AREA = new WorldArea(3103, 3277, 3, 5, 0);
+
+    private final WorldArea TIGHT_ROPE_AREA = new WorldArea(3097, 3277, 6, 5, 3);
+
+    private final WorldArea TIGHT_ROPE_AREA_2 = new WorldArea(
+            new WorldPoint(3090, 3272, 3),
+            new WorldPoint(3087, 3275, 3),
+            new WorldPoint(3091, 3279, 3),
+            new WorldPoint(3094, 3276, 3)
+    );
+
+    private final WorldArea NARROW_WALL_AREA = new WorldArea(3089, 3265, 7, 4, 3);
+    private final WorldArea WALL_AREA = new WorldArea(3083, 3256, 6, 6, 3);
+    private final WorldArea GAP_AREA = new WorldArea(3087, 3251, 8, 5, 3);
+    private final WorldArea CRATE_AREA = new WorldArea(3096, 3256, 6, 6, 3);
+
+    /**
+     * While completing this task, we will also complete the following tasks:
+     * - Complete 10 Laps of the Draynor Agility Course
+     * - Complete a Rooftop Agility Course
+     * - Obtain a Mark of Grace
+     * - Achieve Your First Level 30
+     */
+    public DraynorRooftopAgility(final LeagueScript script) {
+        super(script, "Complete 10 Laps of the Draynor Agility Course");
+        setSkillRequirement(new SkillRequirement(script.ctx, Map.of(SimpleSkills.Skills.AGILITY, 10)));
+    }
+
+    @Override
+    public boolean isCompleted() {
+        return super.isCompleted() && ctx.skills.realLevel(SimpleSkills.Skills.AGILITY) >= 30;
+    }
+
+    @Override
+    public void run() {
+        if (!ctx.pathing.regionLoaded(DRAYNOR_REGION_ID)) {
+            if (!teleportHome()) {
+                return;
+            }
+            if (ctx.teleporter.open()) {
+                script.setScriptStatus("Teleporting to Draynor village");
+                ctx.teleporter.teleportStringPath("Cities", "Draynor village");
+                ctx.onCondition(() -> ctx.pathing.regionLoaded(DRAYNOR_REGION_ID), 250, 10);
+                return;
+            }
+            return;
+        }
+        if (ctx.players.getLocal().isAnimating()) {
+            return;
+        }
+        final int plane = ctx.pathing.plane();
+        if (plane == 0) {
+            if (ROUGH_WALL_AREA.within()) {
+                final SimpleObject object = ctx.objects.populate().filter("Rough wall").nextNearest();
+                if (object != null) {
+                    script.setScriptStatus("Climbing up rough wall");
+                    object.menuAction("Climb");
+                    ctx.onCondition(() -> !ctx.pathing.inArea(ROUGH_WALL_AREA), 200, 10);
+                }
+            } else {
+                ctx.pathing.step(ROUGH_WALL_AREA.getCenterPoint());
+                ctx.sleep(500, 1000);
+                return;
+            }
+        } else if (TIGHT_ROPE_AREA.within() || TIGHT_ROPE_AREA_2.within()) {
+            final SimpleObject object = ctx.objects.populate().filter("Tightrope").nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Cross tightrope");
+                object.menuAction("Cross");
+                ctx.onCondition(() -> ctx.pathing.inArea(NARROW_WALL_AREA), 200, 10);
+            }
+        } else if (ctx.pathing.inArea(NARROW_WALL_AREA)) {
+            final SimpleObject object = ctx.objects.populate().filter("Narrow Wall").nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Balance narrow wall");
+                object.menuAction("Balance");
+                ctx.onCondition(() -> ctx.pathing.inArea(WALL_AREA), 200, 10);
+            }
+        } else if (ctx.pathing.inArea(WALL_AREA)) {
+            final SimpleObject object = ctx.objects.populate().filter("Wall").nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Climb wall");
+                object.menuAction("Jump-up");
+                ctx.onCondition(() -> ctx.pathing.inArea(GAP_AREA), 200, 10);
+            }
+        } else if (ctx.pathing.inArea(GAP_AREA)) {
+            final SimpleObject object = ctx.objects.populate().filter("Gap").nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Jumping down");
+                object.menuAction("Jump");
+                ctx.onCondition(() -> ctx.pathing.inArea(CRATE_AREA), 200, 10);
+            }
+        } else if (ctx.pathing.inArea(CRATE_AREA)) {
+            final SimpleObject object = ctx.objects.populate().filter("Crate").nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Jumping down");
+                object.menuAction("Climb-down");
+                ctx.onCondition(() -> ctx.pathing.plane() == 0, 200, 10);
+            }
+        }
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/agility/TreeGnomeAgility.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.agility;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.data.LeagueScriptConstants;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import net.runelite.api.coords.WorldPoint;
+import simple.hooks.filters.SimpleSkills;
+import simple.hooks.wrappers.SimpleObject;
+import simple.robot.utils.WorldArea;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 12:35 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class TreeGnomeAgility extends LeagueTask {
+
+    private final WorldPoint PIPE_LOCATION = new WorldPoint(2484, 3430, 0);
+    private final WorldArea GNOME_PIPE_AREA = new WorldArea(new WorldPoint(2489, 3431, 0), new WorldPoint(2482, 3427, 0));
+    private final WorldArea GNOME_LOG_AREA = new WorldArea(new WorldPoint(2467, 3441, 0), new WorldPoint(2489, 3435, 0));
+    private final WorldArea GNOME_NET_AREA = new WorldArea(new WorldPoint(2469, 3431, 0), new WorldPoint(2478, 3423, 0));
+    private final WorldArea GNOME_NET_AREA_2 = new WorldArea(new WorldPoint(2489, 3426, 0), new WorldPoint(2481, 3418, 0));
+
+    public TreeGnomeAgility(final LeagueScript script) {
+        super(script, "Complete the Gnome Stronghold Agility Course");
+    }
+
+    @Override
+    public boolean isCompleted() {
+        return super.isCompleted() && ctx.skills.realLevel(SimpleSkills.Skills.AGILITY) >= 10;
+    }
+
+    @Override
+    public void run() {
+        if (!ctx.pathing.regionLoaded(LeagueScriptConstants.GNOME_STRONGHOLD_REGION_ID)) {
+            if (!teleportHome()) {
+                return;
+            }
+            if (ctx.teleporter.open()) {
+                ctx.teleporter.teleportStringPath("Skilling", "Agility Area");
+                ctx.onCondition(() -> ctx.pathing.regionLoaded(LeagueScriptConstants.GNOME_STRONGHOLD_REGION_ID), 250, 10);
+                return;
+            }
+            return;
+        }
+        if (ctx.players.getLocal().isAnimating()) {
+            return;
+        }
+        final int plane = ctx.pathing.plane();
+        if (GNOME_LOG_AREA.within()) {
+            SimpleObject object = ctx.objects.populate().filter("Log balance").nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Balance log");
+                object.menuAction("Walk-across");
+                ctx.onCondition(() -> !ctx.pathing.inArea(GNOME_LOG_AREA), 200, 10);
+            }
+        } else if (GNOME_NET_AREA.within()) {
+            SimpleObject object = ctx.objects.populate().filter("Obstacle net").nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Climbing up");
+                object.menuAction("Climb-over");
+                ctx.onCondition(() -> ctx.pathing.plane() == 1, 200, 10);
+            }
+        } else if (plane == 1) {
+            SimpleObject object = ctx.objects.populate().filter("Tree branch").nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Climbing up");
+                object.menuAction("Climb");
+                ctx.onCondition(() -> ctx.pathing.plane() == 2, 200, 10);
+            }
+        } else if (ctx.pathing.reachable(new WorldPoint(2473, 3420, 2))) {
+            SimpleObject object = ctx.objects.populate().filter("Balancing rope").nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Balancing rope");
+                object.menuAction("Walk-on");
+                ctx.onCondition(() -> !ctx.pathing.reachable(new WorldPoint(2473, 3420, 2)), 200, 10);
+            }
+        } else if (ctx.pathing.reachable(new WorldPoint(2483, 3420, 2))) {
+            SimpleObject object = ctx.objects.populate().filter("Tree branch").nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Climbing down");
+                object.menuAction("Climb-down");
+                ctx.onCondition(() -> !ctx.pathing.reachable(new WorldPoint(2483, 3420, 2)), 200, 10);
+            }
+        } else if (GNOME_NET_AREA_2.within()) {
+            SimpleObject object = ctx.objects.populate().filter("Obstacle net").nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Climbing up");
+                object.menuAction("Climb-over");
+                ctx.onCondition(() -> !ctx.pathing.inArea(GNOME_NET_AREA_2), 200, 10);
+            }
+        } else if (GNOME_PIPE_AREA.within()) {
+            SimpleObject object = ctx.objects.populate().filter("Obstacle pipe").filterWithin(PIPE_LOCATION, 1).nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Squeezing through");
+                object.menuAction("Squeeze-through");
+                ctx.onCondition(() -> !ctx.pathing.inArea(GNOME_PIPE_AREA), 200, 10);
+            }
+        } else if (plane == 0 && !GNOME_LOG_AREA.within()) {
+            script.setScriptStatus("Walk to gnome area");
+            ctx.pathing.step(GNOME_LOG_AREA.getCenterPoint());
+        }
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/agility/VarrockRooftopAgility.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.agility;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import me.remie.vulcan.leaguetasks.task.requirement.SkillRequirement;
+import simple.hooks.filters.SimpleSkills;
+import simple.hooks.wrappers.SimpleObject;
+import simple.robot.utils.WorldArea;
+
+import java.util.Map;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 12:48 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class VarrockRooftopAgility extends LeagueTask {
+
+    public static final int VARROCK_REGION_ID = 12853;
+
+    private final WorldArea ROUGH_WALL_AREA = new WorldArea(3221, 3412, 2, 5, 0);
+
+    private final WorldArea CLOTHES_LINE_AREA = new WorldArea(3212, 3409, 10, 13, 3);
+
+    private final WorldArea LEAP_GAP_AREA_1 = new WorldArea(3201, 3411, 10, 10, 3);
+
+    private final WorldArea BALANCE_WALL_AREA = new WorldArea(3193, 3415, 6, 3, 1);
+
+    private final WorldArea LEAP_GAP_AREA_2 = new WorldArea(3192, 3402, 7, 5, 3);
+
+    private final WorldArea LEAP_GAP_AREA_3 = new WorldArea(3182, 3382, 28, 23, 3);
+
+    private final WorldArea LEAP_GAP_AREA_4 = new WorldArea(3218, 3393, 16, 11, 3);
+
+    private final WorldArea LEDGE_AREA = new WorldArea(3236, 3403, 5, 7, 3);
+
+    private final WorldArea EDGE_AREA = new WorldArea(3236, 3410, 5, 7, 3);
+
+    /**
+     * While completing this task, we will also complete the following tasks:
+     * - Complete 10 Laps of the Varrock Agility Course
+     * - Complete the Varrock Agility Course
+     * - Achieve Your First Level 40
+     */
+    public VarrockRooftopAgility(final LeagueScript script) {
+        super(script, "Complete 10 Laps of the Varrock Agility Course");
+        setSkillRequirement(new SkillRequirement(script.ctx, Map.of(SimpleSkills.Skills.AGILITY, 30)));
+    }
+
+    @Override
+    public boolean isCompleted() {
+        return super.isCompleted() && ctx.skills.realLevel(SimpleSkills.Skills.AGILITY) >= 40;
+    }
+
+    @Override
+    public void run() {
+        if (!ctx.pathing.regionLoaded(VARROCK_REGION_ID)) {
+            if (!teleportHome()) {
+                return;
+            }
+            if (ctx.teleporter.open()) {
+                script.setScriptStatus("Teleporting to Varrock");
+                ctx.teleporter.teleportStringPath("Cities", "Varrock");
+                ctx.onCondition(() -> ctx.pathing.regionLoaded(VARROCK_REGION_ID), 250, 10);
+                return;
+            }
+            return;
+        }
+        if (ctx.players.getLocal().isAnimating()) {
+            return;
+        }
+        final int plane = ctx.pathing.plane();
+        if (plane == 0) {
+            if (ROUGH_WALL_AREA.within()) {
+                final SimpleObject object = ctx.objects.populate().filter("Rough wall").nextNearest();
+                if (object != null) {
+                    script.setScriptStatus("Climbing up wall");
+                    object.menuAction("Climb");
+                    ctx.onCondition(() -> !ctx.pathing.inArea(ROUGH_WALL_AREA), 200, 10);
+                }
+            } else {
+                ctx.pathing.step(ROUGH_WALL_AREA.getCenterPoint());
+                ctx.sleep(500, 1000);
+                return;
+            }
+        } else if (CLOTHES_LINE_AREA.within()) {
+            final SimpleObject object = ctx.objects.populate().filter("Clothes line").nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Balancing across the line");
+                object.menuAction("Cross");
+                ctx.onCondition(() -> ctx.pathing.inArea(LEAP_GAP_AREA_1), 200, 10);
+            }
+        } else if (ctx.pathing.inArea(LEAP_GAP_AREA_1)) {
+            final SimpleObject object = ctx.objects.populate().filter("Gap").nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Jumping down");
+                object.menuAction("Leap");
+                ctx.onCondition(() -> ctx.pathing.inArea(BALANCE_WALL_AREA), 200, 10);
+            }
+        } else if (ctx.pathing.inArea(BALANCE_WALL_AREA)) {
+            final SimpleObject object = ctx.objects.populate().filter("Wall").nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Get across the wall");
+                object.menuAction("Balance");
+                ctx.onCondition(() -> ctx.pathing.inArea(LEAP_GAP_AREA_2), 200, 10);
+            }
+        } else if (ctx.pathing.inArea(LEAP_GAP_AREA_2)) {
+            final SimpleObject object = ctx.objects.populate().filter("Gap").filter(14833).nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Leap to next building");
+                object.menuAction("Leap");
+                ctx.onCondition(() -> ctx.pathing.inArea(LEAP_GAP_AREA_3), 200, 10);
+            }
+        } else if (ctx.pathing.inArea(LEAP_GAP_AREA_3)) {
+            final SimpleObject object = ctx.objects.populate().filter("Gap").filter(14834).nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Crazy parkour");
+                object.menuAction("Leap");
+                ctx.onCondition(() -> ctx.pathing.inArea(LEAP_GAP_AREA_4), 200, 10);
+            }
+        } else if (ctx.pathing.inArea(LEAP_GAP_AREA_4)) {
+            final SimpleObject object = ctx.objects.populate().filter("Gap").filter(14835).nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Leap to next building");
+                object.menuAction("Leap");
+                ctx.onCondition(() -> ctx.pathing.inArea(LEDGE_AREA), 200, 10);
+            }
+        } else if (ctx.pathing.inArea(LEDGE_AREA)) {
+            final SimpleObject object = ctx.objects.populate().filter("Ledge").nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Climb ledge");
+                object.menuAction("Hurdle");
+                ctx.onCondition(() -> ctx.pathing.inArea(EDGE_AREA), 200, 10);
+            }
+        } else if (ctx.pathing.inArea(EDGE_AREA)) {
+            final SimpleObject object = ctx.objects.populate().filter("Edge").nextNearest();
+            if (object != null) {
+                script.setScriptStatus("Jumping off building");
+                object.menuAction("Jump-off");
+                ctx.onCondition(() -> ctx.pathing.plane() == 0, 200, 10);
+            }
+        }
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/emotes/EmoteExplore.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.emotes;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import simple.hooks.simplebot.Game;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 9:13 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class EmoteExplore extends LeagueTask {
+
+    public EmoteExplore(final LeagueScript script) {
+        super(script, "Use the Explore Emote");
+    }
+
+    @Override
+    public void run() {
+        script.setScriptStatus("Performing Explorer emote");
+        ctx.game.tab(Game.Tab.EMOTES);
+        ctx.sleep(1000);
+        ctx.menuActions.sendAction(57, 49, 14155778, 1, "Perform", "<col=ff9040>Explore</col>");
+        ctx.sleep(1000);
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/emotes/EmoteUriTransformation.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.emotes;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import simple.hooks.simplebot.Game;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 9:13 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class EmoteUriTransformation extends LeagueTask {
+
+    public EmoteUriTransformation(final LeagueScript script) {
+        super(script, "Transform into Uri");
+    }
+
+    @Override
+    public void run() {
+        script.setScriptStatus("Performing transform into Uri");
+        ctx.game.tab(Game.Tab.EMOTES);
+        ctx.sleep(1000);
+        ctx.menuActions.sendAction(57, 45, 14155778, 1, "Perform", "<col=ff9040>Uri transform</col>");
+        ctx.sleep(1000);
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/slayer/CheckSlayerTask.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.slayer;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 11:02 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class CheckSlayerTask extends LeagueTask {
+
+    public CheckSlayerTask(final LeagueScript script) {
+        super(script, "Check Your Slayer Task");
+    }
+
+    @Override
+    public boolean canComplete() {
+        return script.isTaskCompleted(SlayerTaskDuradel.class);
+    }
+
+    @Override
+    public void run() {
+        // Nothing to do here as the task is completed by the SlayerTaskDuradel class
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/slayer/SlayerTaskDuradel.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.slayer;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import net.runelite.api.coords.WorldPoint;
+import simple.hooks.wrappers.SimpleNpc;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 11:02 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class SlayerTaskDuradel extends LeagueTask {
+
+    private final WorldPoint DURADEL_LOCATION = new WorldPoint(3077, 3512, 0);
+
+    public SlayerTaskDuradel(final LeagueScript script) {
+        super(script, "Receive a Slayer Task From Duradel");
+    }
+
+    @Override
+    public void run() {
+        if (!teleportHome()) {
+            return;
+        }
+        if (ctx.pathing.distanceTo(DURADEL_LOCATION) >= 5) {
+            script.setScriptStatus("Navigate to Duradel");
+            ctx.pathing.step(DURADEL_LOCATION);
+            ctx.sleep(500, 1000);
+            return;
+        }
+        final SimpleNpc duradel = ctx.npcs.populate().filter("Duradel").nearest().next();
+        if (duradel == null) {
+            return;
+        }
+        script.setScriptStatus("Grabbing assignment");
+        duradel.menuAction("Assignment");
+        ctx.onCondition(() -> ctx.dialogue.dialogueOpen() || isCompleted(), 250, 10);
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/thieving/ThievingLevel20.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.thieving;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import simple.hooks.filters.SimpleSkills;
+import simple.hooks.wrappers.SimpleItem;
+import simple.hooks.wrappers.SimpleNpc;
+import simple.hooks.wrappers.SimpleObject;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 11:19 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class ThievingLevel20 extends LeagueTask {
+
+    /**
+     * This task will achieve our first level 20 stat via thieving.
+     * While completing this task, we will also complete the following tasks:
+     * - Achieve Your First Level 20
+     * - Achieve Your First Level 10
+     * - Achieve Your First Level 5
+     * - Achieve Your First Level Up
+     */
+    public ThievingLevel20(final LeagueScript script) {
+        super(script, "Achieve Your First Level 20");
+    }
+
+    @Override
+    public void run() {
+        if (!teleportHome()) {
+            return;
+        }
+        if (ctx.inventory.inventoryFull()) {
+            if (!ctx.bank.bankOpen()) {
+                final SimpleNpc banker = ctx.npcs.populate().filter(3887).nextNearest();
+                script.setScriptStatus("Opening up bank");
+                if (banker != null) {
+                    banker.menuAction("Bank");
+                    ctx.onCondition(ctx.bank::bankOpen, 250, 10);
+                }
+                return;
+            } else {
+                final Set<Integer> depositedIds = new HashSet<>();
+                for (final SimpleItem item : ctx.inventory.populate().omit(995)) {
+                    if (depositedIds.contains(item.getId())) {
+                        continue;
+                    }
+                    script.setScriptStatus("Deposit items");
+                    item.menuAction("Deposit-All");
+                    depositedIds.add(item.getId());
+                    ctx.sleep(50, 150);
+                }
+                ctx.sleep(1250);
+                ctx.bank.closeBank();
+            }
+            return;
+        }
+
+        final SimpleObject stall = ctx.objects.populate().filter(getStallId()).nextNearest();
+        if (stall == null) {
+            return;
+        }
+        if (ctx.pathing.distanceTo(stall.getLocation()) > 1) {
+            ctx.pathing.step(stall.getLocation());
+            ctx.sleep(500, 1000);
+            return;
+        }
+        script.setScriptStatus("Stealing from " + stall.getName());
+        stall.menuAction("Steal from");
+        ctx.sleep(1250);
+    }
+
+    private int getStallId() {
+        final int level = ctx.skills.realLevel(SimpleSkills.Skills.THIEVING);
+        if (level >= 75) {
+            return 4878;
+        } else if (level >= 65) {
+            return 4877;
+        } else if (level >= 50) {
+            return 4876;
+        } else if (level >= 20) {
+            return 4875;
+        }
+        return 4874;
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/thieving/ThievingPickpocketMan.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.thieving;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.data.LeagueScriptConstants;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import simple.hooks.filters.SimpleSkills;
+import simple.hooks.wrappers.SimpleNpc;
+import simple.robot.utils.WorldArea;
+
+/**
+ * Created by Reminisce on Mar 05, 2024 at 9:12 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class ThievingPickpocketMan extends LeagueTask {
+
+    private final WorldArea LUMBRIDGE_CASTLE_AREA = new WorldArea(3202, 3205, 24, 30, 0);
+
+    public ThievingPickpocketMan(final LeagueScript script) {
+        super(script, "Pickpocket a Citizen");
+    }
+
+    @Override
+    public void run() {
+        if (!ctx.pathing.regionLoaded(LeagueScriptConstants.LUMBRIDGE_REGION_ID) || !LUMBRIDGE_CASTLE_AREA.within()) {
+            if (!teleportHome()) {
+                return;
+            }
+            if (ctx.teleporter.open()) {
+                script.setScriptStatus("Teleport to Lumbridge");
+                ctx.teleporter.teleportStringPath("Cities", "Lumbridge");
+                ctx.onCondition(() -> ctx.pathing.regionLoaded(LeagueScriptConstants.LUMBRIDGE_REGION_ID), 250, 10);
+                return;
+            }
+            return;
+        }
+        final SimpleNpc man = ctx.npcs.populate().filter("Man", "Woman").nextNearest();
+        if (man != null) {
+            script.setScriptStatus("Pickpocket " + man.getName());
+            final int cachedXp = ctx.skills.experience(SimpleSkills.Skills.THIEVING);
+            man.menuAction("Pickpocket");
+            ctx.onCondition(() -> ctx.skills.experience(SimpleSkills.Skills.THIEVING) > cachedXp || isCompleted(), 350, 10);
+        }
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/thieving/ThievingStealSilk.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.thieving;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 11:19 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class ThievingStealSilk extends LeagueTask {
+
+    public ThievingStealSilk(final LeagueScript script) {
+        super(script, "Steal some Silk");
+    }
+
+    @Override
+    public void run() {
+        script.getTask(ThievingLevel20.class).run();
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/travel/TravelDeathsDomain.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.travel;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import net.runelite.api.coords.WorldPoint;
+import simple.hooks.wrappers.SimpleObject;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 9:13 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class TravelDeathsDomain extends LeagueTask {
+
+    private final int DEATHS_COFFIN_ID = 39535;
+    private final int DEATHS_DOMAIN_REGION_ID = 12633;
+    private final WorldPoint DEATHS_DOMAIN_COFFIN = new WorldPoint(3093, 3510, 0);
+
+    public TravelDeathsDomain(final LeagueScript script) {
+        super(script, "Visit Death's Domain");
+    }
+
+    @Override
+    public void run() {
+        if (!teleportHome()) {
+            return;
+        }
+        if (ctx.pathing.distanceTo(DEATHS_DOMAIN_COFFIN) >= 5) {
+            script.setScriptStatus("Navigating to Death's domain");
+            ctx.pathing.step(DEATHS_DOMAIN_COFFIN);
+            ctx.sleep(500, 1000);
+            return;
+        }
+        final SimpleObject coffin = ctx.objects.populate().filter(DEATHS_COFFIN_ID).nextNearest();
+        if (coffin == null) {
+            return;
+        }
+        script.setScriptStatus("Entering Death's domain");
+        coffin.menuAction("Enter");
+        ctx.onCondition(() -> ctx.pathing.regionLoaded(DEATHS_DOMAIN_REGION_ID) || isCompleted(), 250, 10);
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/travel/TravelFossilIsland.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.travel;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import simple.hooks.wrappers.SimpleObject;
+
+/**
+ * Created by Reminisce on Mar 06, 2024 at 7:38 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class TravelFossilIsland extends LeagueTask {
+
+    private final int CAVE_EXIT_ID = 30878;
+    private final int WYVERN_CAVERN_REGION_ID = 14495;
+    private final int FOSSIL_ISLAND_REGION_ID = 14907;
+
+    public TravelFossilIsland(final LeagueScript script) {
+        super(script, "Travel to Fossil Island");
+    }
+
+    @Override
+    public void run() {
+        if (!ctx.pathing.regionLoaded(WYVERN_CAVERN_REGION_ID) && !ctx.pathing.regionLoaded(FOSSIL_ISLAND_REGION_ID)) {
+            if (!teleportHome()) {
+                return;
+            }
+            if (ctx.teleporter.open()) {
+                script.setScriptStatus("Teleporting to Ancient wyvern");
+                ctx.teleporter.teleportStringPath("Dungeons", "Ancient wyvern cave");
+                ctx.onCondition(() -> ctx.pathing.regionLoaded(WYVERN_CAVERN_REGION_ID), 250, 10);
+                return;
+            }
+            return;
+        }
+        if (ctx.pathing.regionLoaded(WYVERN_CAVERN_REGION_ID)) {
+            final SimpleObject caveExit = ctx.objects.populate().filter(CAVE_EXIT_ID).nextNearest();
+            if (caveExit == null) {
+                return;
+            }
+            script.setScriptStatus("Exiting cave");
+            caveExit.menuAction("Exit");
+            ctx.onCondition(() -> ctx.pathing.regionLoaded(FOSSIL_ISLAND_REGION_ID) || isCompleted(), 250, 10);
+            return;
+        }
+        //Teleport back home as we're already on Fossil Island
+        script.setScriptStatus("Teleporting home");
+        teleportHome();
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/travel/TravelMosleHarmless.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.travel;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+
+/**
+ * Created by Reminisce on Mar 06, 2024 at 7:47 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class TravelMosleHarmless extends LeagueTask {
+
+    private final int MOS_LE_HARMLESS_REGION_ID = 14906;
+
+    public TravelMosleHarmless(final LeagueScript script) {
+        super(script, "Visit Mos Le'Harmless");
+    }
+
+    @Override
+    public void run() {
+        if (!ctx.pathing.regionLoaded(MOS_LE_HARMLESS_REGION_ID)) {
+            if (!teleportHome()) {
+                return;
+            }
+            if (ctx.teleporter.open()) {
+                script.setScriptStatus("Teleporting to Mos le harmless");
+                ctx.teleporter.teleportStringPath("Cities", "Mos le harmless");
+                ctx.onCondition(() -> ctx.pathing.regionLoaded(MOS_LE_HARMLESS_REGION_ID), 250, 10);
+                return;
+            }
+        }
+        //Teleport back home as we're already at Mos Le'Harmless
+        script.setScriptStatus("Teleporting home");
+        teleportHome();
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/travel/TravelSpiritTrees.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.travel;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.data.LeagueScriptConstants;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import simple.hooks.wrappers.SimpleObject;
+
+/**
+ * Created by Reminisce on Mar 04, 2024 at 11:40 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class TravelSpiritTrees extends LeagueTask {
+
+    private final int TREE_GNOME_REGION_ID = 10033;
+
+    /**
+     * While completing this task, we will also complete the following tasks:
+     * - Travel Between Your Spirit Trees
+     * - Visit the Tree Gnome Stronghold
+     */
+    public TravelSpiritTrees(final LeagueScript script) {
+        super(script, "Travel Between Your Spirit Trees");
+    }
+
+    @Override
+    public void run() {
+        if (ctx.pathing.regionLoaded(LeagueScriptConstants.GNOME_STRONGHOLD_REGION_ID)) {
+            teleportHome();
+            return;
+        }
+        if (!ctx.pathing.regionLoaded(TREE_GNOME_REGION_ID)) {
+            if (!teleportHome()) {
+                return;
+            }
+            if (ctx.teleporter.open()) {
+                script.setScriptStatus("Teleporting to Tree gnome");
+                ctx.teleporter.teleportStringPath("Cities", "Tree gnome");
+                ctx.onCondition(() -> ctx.pathing.regionLoaded(TREE_GNOME_REGION_ID), 250, 10);
+                return;
+            }
+            return;
+        }
+        final SimpleObject tree = ctx.objects.populate().filter(1293).nextNearest();
+        if (tree == null) {
+            return;
+        }
+        if (!getTeleporterScrollHelper().isOpen()) {
+            script.setScriptStatus("Talk to tree");
+            tree.menuAction("Talk-to");
+            ctx.sleep(1000);
+            return;
+        }
+        script.setScriptStatus("Teleporting");
+        getTeleporterScrollHelper().teleport(1);
+        ctx.onCondition(() -> ctx.pathing.regionLoaded(LeagueScriptConstants.GNOME_STRONGHOLD_REGION_ID) || isCompleted(), 250, 10);
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/woodcutting/WoodcuttingCore.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.woodcutting;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.data.LeagueScriptConstants;
+import me.remie.vulcan.leaguetasks.helpers.ItemDetails;
+import me.remie.vulcan.leaguetasks.helpers.shop.ShopHelper;
+import me.remie.vulcan.leaguetasks.helpers.shop.ShopType;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import net.runelite.api.coords.WorldPoint;
+import simple.hooks.filters.SimpleSkills;
+import simple.hooks.wrappers.SimpleItem;
+import simple.hooks.wrappers.SimpleObject;
+
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * Created by Reminisce on Mar 07, 2024 at 5:48 PM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class WoodcuttingCore extends LeagueTask {
+
+    private static final WorldPoint BANK_TILE = new WorldPoint(1592, 3476, 0);
+    private static final ItemDetails IRON_AXE = new ItemDetails("Iron axe", 1349, 1_000);
+    private static final ItemDetails RUNE_AXE = new ItemDetails("Rune axe", 1359, 250_000);
+    private static final int BANK_CHEST_WC_GUILD = 28861;
+
+    private final ShopHelper ironAxeShopHelper;
+    private final ShopHelper runeAxeShopHelper;
+
+    private final WoodcuttingTree selectedTree;
+
+    public WoodcuttingCore(final LeagueScript script, final String taskName, final WoodcuttingTree selectedTree) {
+        super(script, taskName);
+        this.selectedTree = selectedTree;
+        this.ironAxeShopHelper = new ShopHelper(this);
+        this.runeAxeShopHelper = new ShopHelper(this);
+    }
+
+    @Override
+    public void run() {
+        if (!getShopHelper().hasItem()) {
+            script.setScriptStatus("Acquiring " + getRequiredAxe().getItemName());
+            getShopHelper().buyItem(getRequiredAxe(), ShopType.GENERAL_STORE);
+            return;
+        }
+        if (!LeagueScriptConstants.WOODCUTTING_GUILD_AREA.within()) {
+            if (!teleportHome()) {
+                return;
+            }
+            if (ctx.teleporter.open()) {
+                script.setScriptStatus("Teleporting to Woodcutting Area");
+                ctx.teleporter.teleportStringPath("Skilling", "Woodcutting Area");
+                ctx.onCondition(LeagueScriptConstants.WOODCUTTING_GUILD_AREA::within, 350, 10);
+                return;
+            }
+            return;
+        }
+        if (ctx.inventory.inventoryFull()) {
+            handleBanking();
+            return;
+        }
+
+        final WoodcuttingTree tree = getBestTree();
+        if (ctx.pathing.inArea(tree.getArea()) && ctx.pathing.distanceTo(tree.getArea().getCenterPoint()) >= 17) {
+            script.setScriptStatus("Navigating to " + tree.getTreeName());
+            ctx.menuActions.step(tree.getArea().getCenterPoint());
+            return;
+        }
+        if (ctx.players.getLocal().getAnimation() == -1) {
+            final SimpleObject treeObject = ctx.objects.populate().filter(tree.getTreeName())
+                    .filter(LeagueScriptConstants.WOODCUTTING_GUILD_AREA).filter(tree.getArea()).nextNearest();
+            if (treeObject != null) {
+                script.setScriptStatus("Chopping down " + treeObject.getName());
+                treeObject.menuAction("Chop down");
+                ctx.onCondition(() -> ctx.players.getLocal().getAnimation() != -1, 250, 10);
+                return;
+            } else {
+                System.out.println("We can't find a tree");
+            }
+        }
+    }
+
+    private void handleBanking() {
+        final double distance = ctx.pathing.distanceTo(BANK_TILE);
+        if (distance >= 10) {
+            ctx.pathing.walkPath(ctx.pathing.createLocalPath(BANK_TILE));
+            return;
+        } else if (!ctx.pathing.onTile(BANK_TILE)) {
+            ctx.menuActions.step(BANK_TILE);
+            return;
+        }
+
+        // Temporary fix because Vulcan is missing chest id.
+        if (distance <= 1 && !ctx.bank.bankOpen()) {
+            final SimpleObject bankChest = ctx.objects.populate().filter(BANK_CHEST_WC_GUILD).nextNearest();
+            if (bankChest != null) {
+                script.setScriptStatus("Opening " + bankChest.getName());
+                bankChest.menuAction("Use");
+            }
+            return;
+        }
+
+        final Set<Integer> depositedIds = new HashSet<>();
+        for (final SimpleItem item : ctx.inventory.populate().omit(getRequiredAxe().getItemId())) {
+            if (depositedIds.contains(item.getId())) {
+                continue;
+            }
+            item.menuAction("Deposit-All");
+            depositedIds.add(item.getId());
+            ctx.sleep(50, 150);
+        }
+        ctx.sleep(500, 1000);
+        ctx.bank.closeBank();
+    }
+
+    public WoodcuttingTree getBestTree() {
+        if (this.selectedTree != null && ctx.skills.realLevel(SimpleSkills.Skills.WOODCUTTING) >= this.selectedTree.getRequiredLevel()) {
+            return this.selectedTree;
+        }
+        WoodcuttingTree bestTree = WoodcuttingTree.NORMAL;
+        for (final WoodcuttingTree tree : WoodcuttingTree.values()) {
+            if (ctx.skills.realLevel(SimpleSkills.Skills.WOODCUTTING) >= tree.getRequiredLevel()) {
+                bestTree = tree;
+            }
+        }
+        return bestTree;
+    }
+
+    private ItemDetails getRequiredAxe() {
+        if (ctx.skills.realLevel(SimpleSkills.Skills.WOODCUTTING) >= 41) {
+            return RUNE_AXE;
+        }
+        return IRON_AXE;
+    }
+
+    private ShopHelper getShopHelper() {
+        if (ctx.skills.realLevel(SimpleSkills.Skills.WOODCUTTING) >= 41) {
+            return runeAxeShopHelper;
+        }
+        return ironAxeShopHelper;
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/woodcutting/WoodcuttingTree.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.woodcutting;
+
+import simple.robot.utils.WorldArea;
+
+/**
+ * Created by Reminisce on Mar 08, 2024 at 12:11 AM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public enum WoodcuttingTree {
+
+    NORMAL("Tree", 1, new WorldArea(1615, 3505, 42, 14, 0)),
+    OAK("Oak tree", 15, new WorldArea(1615, 3505, 39, 12, 0)),
+    WILLOW("Willow tree", 30, new WorldArea(1625, 3493, 20, 12, 0)),
+    MAPLE("Maple tree", 45, new WorldArea(1608, 3489, 12, 13, 0)),
+    YEW("Yew tree", 60, new WorldArea(1588, 3483, 12, 15, 0)),
+    MAGIC("Magic tree", 75, new WorldArea(1577, 3479, 24, 19, 0));
+
+    private final String treeName;
+    private final int requiredLevel;
+    private final WorldArea area;
+
+    WoodcuttingTree(final String treeName, final int requiredLevel, final WorldArea area) {
+        this.treeName = treeName;
+        this.requiredLevel = requiredLevel;
+        this.area = area;
+    }
+
+    public String getTreeName() {
+        return treeName;
+    }
+
+    public int getRequiredLevel() {
+        return requiredLevel;
+    }
+
+    public WorldArea getArea() {
+        return area;
+    }
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/woodcutting/tasks/ChopMagicLogs.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.woodcutting.tasks;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import me.remie.vulcan.leaguetasks.task.tasks.woodcutting.WoodcuttingCore;
+import me.remie.vulcan.leaguetasks.task.tasks.woodcutting.WoodcuttingTree;
+
+/**
+ * Created by Reminisce on Mar 08, 2024 at 12:13 AM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class ChopMagicLogs extends LeagueTask {
+
+    private final WoodcuttingCore woodcuttingCore;
+
+    public ChopMagicLogs(final LeagueScript script) {
+        super(script, "Chop 75 Magic Logs");
+        this.woodcuttingCore = new WoodcuttingCore(script, this.getName(), WoodcuttingTree.MAGIC);
+    }
+
+    @Override
+    public void run() {
+        this.woodcuttingCore.run();
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/woodcutting/tasks/ChopNormalLogs.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.woodcutting.tasks;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import me.remie.vulcan.leaguetasks.task.tasks.woodcutting.WoodcuttingCore;
+import me.remie.vulcan.leaguetasks.task.tasks.woodcutting.WoodcuttingTree;
+
+/**
+ * Created by Reminisce on Mar 08, 2024 at 12:12 AM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class ChopNormalLogs extends LeagueTask {
+
+    private final WoodcuttingCore woodcuttingCore;
+
+    public ChopNormalLogs(final LeagueScript script) {
+        super(script, "Chop Some Logs");
+        this.woodcuttingCore = new WoodcuttingCore(script, this.getName(), WoodcuttingTree.NORMAL);
+    }
+
+    @Override
+    public void run() {
+        this.woodcuttingCore.run();
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/task/tasks/woodcutting/tasks/ChopWillowLogs.java ---
+package me.remie.vulcan.leaguetasks.task.tasks.woodcutting.tasks;
+
+import me.remie.vulcan.leaguetasks.LeagueScript;
+import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import me.remie.vulcan.leaguetasks.task.tasks.woodcutting.WoodcuttingCore;
+import me.remie.vulcan.leaguetasks.task.tasks.woodcutting.WoodcuttingTree;
+
+/**
+ * Created by Reminisce on Mar 08, 2024 at 12:13 AM
+ *
+ * @author Reminisce <thereminisc3@gmail.com>
+ * @Discord reminisce <138751815847116800>
+ */
+public class ChopWillowLogs extends LeagueTask {
+
+    private final WoodcuttingCore woodcuttingCore;
+
+    public ChopWillowLogs(final LeagueScript script) {
+        super(script, "Chop 100 Willow Logs");
+        this.woodcuttingCore = new WoodcuttingCore(script, this.getName(), WoodcuttingTree.WILLOW);
+    }
+
+    @Override
+    public void run() {
+        this.woodcuttingCore.run();
+    }
+
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/utils/LeaguePanel.java ---
+package me.remie.vulcan.leaguetasks.utils;
+
+import simple.hooks.simplebot.Game;
+import simple.hooks.wrappers.SimpleWidget;
+import simple.robot.api.ClientContext;
+
+public class LeaguePanel {
+    private final ClientContext ctx;
+    private static final int WIDGET_ID = 657;
+
+    public LeaguePanel(final ClientContext ctx) {
+        this.ctx = ctx;
+    }
+
+    public boolean doWeNeedToClearFilters() {
+        for (LeaguePanelFilterType filterType : LeaguePanelFilterType.values()) {
+            SimpleWidget dropDownMenu = ctx.widgets.getWidget(WIDGET_ID, filterType.getWidgetId());
+            if (!isOptionSelected(dropDownMenu)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isOptionSelected(SimpleWidget widget) {
+        if (widget == null) {
+            return false;
+        }
+        final SimpleWidget child = widget.getChild(4);
+        if (child == null) {
+            return false;
+        }
+        return "all".equalsIgnoreCase(child.getText());
+    }
+
+    private boolean chooseAllInDropDown(int filterWidgetId, int filterDropdownOptionId) {
+        final SimpleWidget filterDropDownMenu = ctx.widgets.getWidget(WIDGET_ID, filterWidgetId);
+        if (filterDropDownMenu == null || isOptionSelected(filterDropDownMenu)) {
+            return true;
+        }
+        final SimpleWidget selectedOption = filterDropDownMenu.getChild(4);
+        final SimpleWidget dropDownMenu = ctx.widgets.getWidget(WIDGET_ID, filterDropdownOptionId);
+        if (!chooseOptionInDropdown(selectedOption, dropDownMenu)) {
+            ctx.log("Something went wrong choosing all in options");
+            return false;
+        }
+        return true;
+    }
+
+    public boolean clearAllFilterOptions() {
+        for (LeaguePanelFilterType filterType : LeaguePanelFilterType.values()) {
+            if (!chooseAllInDropDown(filterType.getWidgetId(), filterType.getAllOptionWidgetId())) {
+                ctx.log("Something went wrong choosing " + filterType.name() + " option");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean chooseOptionInDropdown(SimpleWidget dropDownWidget, SimpleWidget dropDownOptionList) {
+        if (dropDownWidget == null || dropDownWidget.getChild(1) == null) {
+            return false;
+        }
+
+        dropDownWidget.click(1);
+        ctx.sleep(1500);
+        if (dropDownOptionList != null && !dropDownOptionList.isHidden()) {
+            final SimpleWidget selectedOption = dropDownOptionList.getChild(1);
+            if (selectedOption != null) {
+                selectedOption.click(1);
+                ctx.sleep(1300);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isLeaguePanelOpen() {
+        final SimpleWidget leaguePanelWidget = getLeaguePanelWidget();
+        return leaguePanelWidget != null && !leaguePanelWidget.isHidden();
+    }
+
+    public boolean openLeaguePanel() {
+        if (isLeaguePanelOpen()) {
+            return true;
+        }
+
+        ctx.log("Opening leagues menu");
+        ctx.game.tab(Game.Tab.QUESTS);
+        ctx.menuActions.clickButton(41222167);
+        ctx.sleep(1000);
+        ctx.menuActions.clickButton(42991640);
+        return ctx.onCondition(() -> isLeaguePanelOpen(), 1000, 5);
+    }
+
+    public SimpleWidget getLeaguePanelWidget() {
+        return ctx.widgets.getWidget(WIDGET_ID,18);
+    }
+}
+
+'''
+'''--- src/me/remie/vulcan/leaguetasks/utils/LeaguePanelFilterType.java ---
+package me.remie.vulcan.leaguetasks.utils;
+
+public enum LeaguePanelFilterType {
+    FILTER_TIER(27, 35),
+    FILTER_TYPE(28, 36),
+    FILTER_AREA(29, 37),
+    FILTER_COMPLETED(31, 39);
+
+    private final int widgetId;
+    private final int allOptionWidgetId;
+
+    LeaguePanelFilterType( int widgetId, int allOptionWidgetId) {
+        this.widgetId = widgetId;
+        this.allOptionWidgetId = allOptionWidgetId;
+    }
+
+    public int getWidgetId() {
+        return widgetId;
+    }
+
+    public int getAllOptionWidgetId() {
+        return allOptionWidgetId;
+    }
+}
+
+'''
