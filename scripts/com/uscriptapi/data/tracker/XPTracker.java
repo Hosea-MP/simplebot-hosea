@@ -1,4 +1,4 @@
-package org.data.tracker;
+package com.uscriptapi.data.tracker;
 
 import simple.hooks.filters.SimpleSkills;
 import simple.robot.api.ClientContext;

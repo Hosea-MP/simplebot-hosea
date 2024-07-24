@@ -1,4 +1,4 @@
-package org.data.database.minigames;
+package com.uscriptapi.data.database.minigames;
 
 import net.runelite.api.Projectile;
 import net.runelite.api.coords.WorldPoint;

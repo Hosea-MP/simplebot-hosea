@@ -4971,7 +4971,7 @@ public class eMain extends TaskScript implements LoopingScript {
 package eApiAccess;
 
 import BotUtils.eActions;
-import org.json.JSONObject;
+import com.uscriptapi.json.JSONObject;
 import simple.robot.api.ClientContext;
 
 import javax.crypto.Cipher;
@@ -5398,9 +5398,9 @@ package eApiAccess;
 import eAutoFighterZenyte.AutoFighterUI;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.coords.WorldPoint;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.uscriptapi.json.JSONArray;
+import com.uscriptapi.json.JSONException;
+import com.uscriptapi.json.JSONObject;
 import simple.hooks.scripts.task.Task;
 import simple.hooks.simplebot.Game;
 import simple.hooks.wrappers.SimplePlayer;
@@ -6601,8 +6601,8 @@ package eAutoFighterZenyte;
 import eApiAccess.eAutoResponser;
 import eAutoFighterZenyte.data.eFood;
 import eAutoFighterZenyte.data.eLoots;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.uscriptapi.json.JSONArray;
+import com.uscriptapi.json.JSONObject;
 import simple.hooks.filters.SimplePrayers;
 import simple.hooks.filters.SimpleSkills;
 import simple.hooks.wrappers.SimpleNpc;

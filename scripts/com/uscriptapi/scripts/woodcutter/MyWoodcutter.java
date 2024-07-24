@@ -1,9 +1,9 @@
 package com.uscriptapi.scripts.woodcutter;
 
-import org.scripter.ScriptController;
-import org.scripts.woodcutter.tasks.Bank;
-import org.scripts.woodcutter.tasks.Chop;
-import org.scripts.woodcutter.tasks.Drop;
+import com.uscriptapi.scripter.ScriptController;
+import com.uscriptapi.scripts.woodcutter.tasks.Bank;
+import com.uscriptapi.scripts.woodcutter.tasks.Chop;
+import com.uscriptapi.scripts.woodcutter.tasks.Drop;
 import simple.hooks.scripts.Category;
 import simple.hooks.scripts.ScriptManifest;
 import simple.hooks.simplebot.ChatMessage;

@@ -1,9 +1,9 @@
-package org.data.handler;
+package com.uscriptapi.data.handler;
 
 import net.runelite.api.VarPlayer;
 import net.runelite.api.coords.WorldPoint;
-import org.data.database.Items;
-import org.data.database.Objects;
+import com.uscriptapi.data.database.Items;
+import com.uscriptapi.data.database.Objects;
 import simple.hooks.wrappers.SimpleItem;
 import simple.hooks.wrappers.SimpleObject;
 import simple.robot.api.ClientContext;

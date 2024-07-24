@@ -1,6 +1,6 @@
-package org.data.handler;
+package com.uscriptapi.data.handler;
 
-import org.data.database.Prayer;
+import com.uscriptapi.data.database.Prayer;
 import simple.robot.api.ClientContext;
 
 import java.util.ArrayList;

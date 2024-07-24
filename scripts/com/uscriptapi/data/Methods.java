@@ -1,9 +1,9 @@
-package org.data;
+package com.uscriptapi.data;
 
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.callback.ClientThread;
-import org.data.database.Widgets;
+import com.uscriptapi.data.database.Widgets;
 import simple.hooks.queries.SimpleEntityQuery;
 import simple.hooks.queries.SimpleItemQuery;
 import simple.hooks.simplebot.Keyboard;

@@ -1,4 +1,4 @@
-package org.data.database;
+package com.uscriptapi.data.database;
 
 import net.runelite.api.coords.WorldPoint;
 import simple.hooks.interfaces.SimpleLocatable;

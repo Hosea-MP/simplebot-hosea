@@ -2,9 +2,9 @@ package com.uscriptapi.scripts.miners.dropminer;
 
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.client.eventbus.Subscribe;
-import org.scripter.ScriptController;
-import org.scripts.miners.dropminer.tasks.Drop;
-import org.scripts.miners.dropminer.tasks.Mine;
+import com.uscriptapi.scripter.ScriptController;
+import com.uscriptapi.scripts.miners.dropminer.tasks.Drop;
+import com.uscriptapi.scripts.miners.dropminer.tasks.Mine;
 import simple.hooks.scripts.Category;
 import simple.hooks.scripts.ScriptManifest;
 import simple.hooks.simplebot.ChatMessage;

@@ -1,4 +1,4 @@
-package org.data.database;
+package com.uscriptapi.data.database;
 
 public enum Animations {
     FISHING(621),

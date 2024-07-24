@@ -1,8 +1,8 @@
 package com.uscriptapi.scripts.woodcutter.tasks;
 
-import org.data.database.Items;
-import org.scripter.Task;
-import org.scripts.woodcutter.MyWoodcutter;
+import com.uscriptapi.data.database.Items;
+import com.uscriptapi.scripter.Task;
+import com.uscriptapi.scripts.woodcutter.MyWoodcutter;
 
 public class Bank extends Task {
     @Override

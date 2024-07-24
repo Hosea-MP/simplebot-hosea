@@ -1,4 +1,4 @@
-package org.data.path;
+package com.uscriptapi.data.path;
 
 import net.runelite.api.coords.WorldPoint;
 import simple.hooks.interfaces.SimpleActor;

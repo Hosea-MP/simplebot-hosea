@@ -1,4 +1,4 @@
-package org.data.database;
+package com.uscriptapi.data.database;
 
 public enum Runes {
     FIRE_RUNE(554),

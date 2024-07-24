@@ -1,4 +1,4 @@
-package org.data.database;
+package com.uscriptapi.data.database;
 
 import simple.robot.api.ClientContext;
 

@@ -1,7 +1,7 @@
-package org.data.database.bosses;
+package com.uscriptapi.data.database.bosses;
 
 import net.runelite.api.coords.WorldPoint;
-import org.data.database.minigames.FightCaves;
+import com.uscriptapi.data.database.minigames.FightCaves;
 import simple.hooks.queries.SimpleEntityQuery;
 import simple.hooks.queries.SimpleIdQuery;
 import simple.hooks.wrappers.SimpleNpc;

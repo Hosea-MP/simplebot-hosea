@@ -1,8 +1,8 @@
 package com.uscriptapi.scripts.miners.dropminer.tasks;
 
-import org.data.database.Items;
-import org.scripter.Task;
-import org.scripts.miners.dropminer.MyDropMiner;
+import com.uscriptapi.data.database.Items;
+import com.uscriptapi.scripter.Task;
+import com.uscriptapi.scripts.miners.dropminer.MyDropMiner;
 import simple.hooks.wrappers.SimpleItem;
 
 // Drop task class responsible for dropping items in the player's inventory

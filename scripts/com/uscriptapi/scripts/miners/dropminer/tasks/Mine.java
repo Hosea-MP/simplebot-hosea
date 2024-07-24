@@ -1,9 +1,9 @@
 package com.uscriptapi.scripts.miners.dropminer.tasks;
 
 import net.runelite.api.coords.WorldPoint;
-import org.data.database.Objects;
-import org.scripter.Task;
-import org.scripts.miners.dropminer.MyDropMiner;
+import com.uscriptapi.data.database.Objects;
+import com.uscriptapi.scripter.Task;
+import com.uscriptapi.scripts.miners.dropminer.MyDropMiner;
 import simple.hooks.wrappers.SimpleObject;
 import simple.robot.api.ClientContext;
 

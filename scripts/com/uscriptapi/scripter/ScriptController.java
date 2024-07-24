@@ -1,6 +1,6 @@
 package com.uscriptapi.scripter;
 
-import org.data.Methods;
+import com.uscriptapi.data.Methods;
 import simple.robot.api.ClientContext;
 
 import java.util.ArrayList;

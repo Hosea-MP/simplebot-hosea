@@ -1,4 +1,4 @@
-package org.data.database.raids;
+package com.uscriptapi.data.database.raids;
 
 import net.runelite.api.Deque;
 import net.runelite.api.GraphicsObject;
