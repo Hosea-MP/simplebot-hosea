@@ -1,12 +1,10 @@
-package net.runelite.client.plugins;
+package net.runelite.client.plugins.test;
 
 import com.google.inject.Provides;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.plugins.test.TestPluginConfig;
-import net.runelite.client.plugins.test.TestPluginPanel;
-import net.runelite.client.ui.PluginPanel;
+import com.test.TestScript;
 
 import javax.inject.Inject;
 
@@ -17,10 +15,11 @@ import javax.inject.Inject;
 )
 public class TestPlugin extends Plugin {
 
-    private TestPluginPanel panel;
-
     @Inject
     private ConfigManager configManager;
+
+    @Inject
+    private TestPluginConfig config;
 
     @Provides
     TestPluginConfig provideConfig(ConfigManager configManager) {
@@ -29,16 +28,19 @@ public class TestPlugin extends Plugin {
 
     @Override
     protected void startUp() throws Exception {
-        panel = new TestPluginPanel();
-        getPluginPanel().add(panel);
+        // Set the user inputs from the config to the TestScript
+        TestScript.setUserInputs(
+                config.type(),
+                config.id(),
+                config.name(),
+                config.interactionText()
+        );
+        // Start the script
+        TestScript.startScript();
     }
 
     @Override
     protected void shutDown() throws Exception {
-        getPluginPanel().remove(panel);
-    }
-
-    public PluginPanel getPluginPanel() {
-        return panel;
+        // Logic to stop the script if needed
     }
 }
