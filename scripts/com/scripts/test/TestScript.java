@@ -1,4 +1,4 @@
-package com.example.test;
+package com.scripts.test;
 
 public class TestScript {
 }
