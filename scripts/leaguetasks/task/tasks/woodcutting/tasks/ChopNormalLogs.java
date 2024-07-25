@@ -1,9 +1,9 @@
-package me.remie.vulcan.leaguetasks.task.tasks.woodcutting.tasks;
+package leaguetasks.task.tasks.woodcutting.tasks;
 
-import me.remie.vulcan.leaguetasks.LeagueScript;
-import me.remie.vulcan.leaguetasks.task.LeagueTask;
-import me.remie.vulcan.leaguetasks.task.tasks.woodcutting.WoodcuttingCore;
-import me.remie.vulcan.leaguetasks.task.tasks.woodcutting.WoodcuttingTree;
+import leaguetasks.LeagueScript;
+import leaguetasks.task.LeagueTask;
+import leaguetasks.task.tasks.woodcutting.WoodcuttingCore;
+import leaguetasks.task.tasks.woodcutting.WoodcuttingTree;
 
 /**
  * Created by Reminisce on Mar 08, 2024 at 12:12 AM

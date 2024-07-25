@@ -1,4 +1,4 @@
-package me.remie.vulcan.leaguetasks.helpers.shop;
+package leaguetasks.helpers.shop;
 
 /**
  * Created by Reminisce on Mar 07, 2024 at 5:17 PM

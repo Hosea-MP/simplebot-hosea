@@ -1,7 +1,7 @@
-package me.remie.vulcan.leaguetasks.task.tasks.emotes;
+package leaguetasks.task.tasks.emotes;
 
-import me.remie.vulcan.leaguetasks.LeagueScript;
-import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import leaguetasks.LeagueScript;
+import leaguetasks.task.LeagueTask;
 import simple.hooks.simplebot.Game;
 
 /**

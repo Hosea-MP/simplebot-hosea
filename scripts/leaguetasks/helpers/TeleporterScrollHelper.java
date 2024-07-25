@@ -1,4 +1,4 @@
-package me.remie.vulcan.leaguetasks.helpers;
+package leaguetasks.helpers;
 
 import simple.hooks.wrappers.SimpleWidget;
 import simple.robot.api.ClientContext;

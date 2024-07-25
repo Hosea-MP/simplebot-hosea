@@ -1,4 +1,4 @@
-package me.remie.vulcan.leaguetasks.utils;
+package leaguetasks.utils;
 
 public enum LeaguePanelFilterType {
     FILTER_TIER(27, 35),

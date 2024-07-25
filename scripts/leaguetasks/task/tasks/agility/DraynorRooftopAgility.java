@@ -1,8 +1,8 @@
-package me.remie.vulcan.leaguetasks.task.tasks.agility;
+package leaguetasks.task.tasks.agility;
 
-import me.remie.vulcan.leaguetasks.LeagueScript;
-import me.remie.vulcan.leaguetasks.task.LeagueTask;
-import me.remie.vulcan.leaguetasks.task.requirement.SkillRequirement;
+import leaguetasks.LeagueScript;
+import leaguetasks.task.LeagueTask;
+import leaguetasks.task.requirement.SkillRequirement;
 import net.runelite.api.coords.WorldPoint;
 import simple.hooks.filters.SimpleSkills;
 import simple.hooks.wrappers.SimpleObject;

@@ -1,8 +1,8 @@
-package me.remie.vulcan.leaguetasks.task.tasks.travel;
+package leaguetasks.task.tasks.travel;
 
-import me.remie.vulcan.leaguetasks.LeagueScript;
-import me.remie.vulcan.leaguetasks.data.LeagueScriptConstants;
-import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import leaguetasks.LeagueScript;
+import leaguetasks.data.LeagueScriptConstants;
+import leaguetasks.task.LeagueTask;
 import simple.hooks.wrappers.SimpleObject;
 
 /**

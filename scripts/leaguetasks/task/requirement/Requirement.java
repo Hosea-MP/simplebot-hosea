@@ -1,4 +1,4 @@
-package me.remie.vulcan.leaguetasks.task.requirement;
+package leaguetasks.task.requirement;
 
 import simple.robot.api.ClientContext;
 

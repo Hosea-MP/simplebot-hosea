@@ -1,10 +1,10 @@
-package me.remie.vulcan.leaguetasks.task;
+package leaguetasks.task;
 
-import me.remie.vulcan.leaguetasks.LeagueScript;
-import me.remie.vulcan.leaguetasks.data.LeagueScriptConstants;
-import me.remie.vulcan.leaguetasks.helpers.TeleporterScrollHelper;
-import me.remie.vulcan.leaguetasks.task.requirement.ItemRequirement;
-import me.remie.vulcan.leaguetasks.task.requirement.SkillRequirement;
+import leaguetasks.LeagueScript;
+import leaguetasks.data.LeagueScriptConstants;
+import leaguetasks.helpers.TeleporterScrollHelper;
+import leaguetasks.task.requirement.ItemRequirement;
+import leaguetasks.task.requirement.SkillRequirement;
 import simple.hooks.simplebot.ChatMessage;
 import simple.robot.api.ClientContext;
 

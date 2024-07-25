@@ -1,4 +1,4 @@
-package me.remie.vulcan.leaguetasks.data;
+package leaguetasks.data;
 
 import net.runelite.api.coords.WorldPoint;
 import simple.robot.utils.WorldArea;

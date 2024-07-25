@@ -1,11 +1,11 @@
-package me.remie.vulcan.leaguetasks.task.tasks.woodcutting;
+package leaguetasks.task.tasks.woodcutting;
 
-import me.remie.vulcan.leaguetasks.LeagueScript;
-import me.remie.vulcan.leaguetasks.data.LeagueScriptConstants;
-import me.remie.vulcan.leaguetasks.helpers.ItemDetails;
-import me.remie.vulcan.leaguetasks.helpers.shop.ShopHelper;
-import me.remie.vulcan.leaguetasks.helpers.shop.ShopType;
-import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import leaguetasks.LeagueScript;
+import leaguetasks.data.LeagueScriptConstants;
+import leaguetasks.helpers.ItemDetails;
+import leaguetasks.helpers.shop.ShopHelper;
+import leaguetasks.helpers.shop.ShopType;
+import leaguetasks.task.LeagueTask;
 import net.runelite.api.coords.WorldPoint;
 import simple.hooks.filters.SimpleSkills;
 import simple.hooks.wrappers.SimpleItem;

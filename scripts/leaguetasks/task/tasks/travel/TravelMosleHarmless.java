@@ -1,7 +1,7 @@
-package me.remie.vulcan.leaguetasks.task.tasks.travel;
+package leaguetasks.task.tasks.travel;
 
-import me.remie.vulcan.leaguetasks.LeagueScript;
-import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import leaguetasks.LeagueScript;
+import leaguetasks.task.LeagueTask;
 
 /**
  * Created by Reminisce on Mar 06, 2024 at 7:47 PM

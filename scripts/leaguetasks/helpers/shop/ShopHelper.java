@@ -1,8 +1,8 @@
-package me.remie.vulcan.leaguetasks.helpers.shop;
+package leaguetasks.helpers.shop;
 
-import me.remie.vulcan.leaguetasks.helpers.ItemDetails;
-import me.remie.vulcan.leaguetasks.task.LeagueTask;
-import me.remie.vulcan.leaguetasks.task.tasks.thieving.ThievingLevel20;
+import leaguetasks.helpers.ItemDetails;
+import leaguetasks.task.LeagueTask;
+import leaguetasks.task.tasks.thieving.ThievingLevel20;
 import net.runelite.api.coords.WorldPoint;
 import simple.hooks.wrappers.SimpleItem;
 import simple.hooks.wrappers.SimpleNpc;

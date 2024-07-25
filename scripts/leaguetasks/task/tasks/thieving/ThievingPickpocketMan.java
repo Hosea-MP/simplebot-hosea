@@ -1,8 +1,8 @@
-package me.remie.vulcan.leaguetasks.task.tasks.thieving;
+package leaguetasks.task.tasks.thieving;
 
-import me.remie.vulcan.leaguetasks.LeagueScript;
-import me.remie.vulcan.leaguetasks.data.LeagueScriptConstants;
-import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import leaguetasks.LeagueScript;
+import leaguetasks.data.LeagueScriptConstants;
+import leaguetasks.task.LeagueTask;
 import simple.hooks.filters.SimpleSkills;
 import simple.hooks.wrappers.SimpleNpc;
 import simple.robot.utils.WorldArea;

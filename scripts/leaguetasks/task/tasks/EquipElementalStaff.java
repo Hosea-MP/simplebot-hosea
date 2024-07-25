@@ -1,8 +1,8 @@
-package me.remie.vulcan.leaguetasks.task.tasks;
+package leaguetasks.task.tasks;
 
-import me.remie.vulcan.leaguetasks.LeagueScript;
-import me.remie.vulcan.leaguetasks.task.LeagueTask;
-import me.remie.vulcan.leaguetasks.task.requirement.ItemRequirement;
+import leaguetasks.LeagueScript;
+import leaguetasks.task.LeagueTask;
+import leaguetasks.task.requirement.ItemRequirement;
 import simple.hooks.wrappers.SimpleItem;
 
 import java.util.Map;

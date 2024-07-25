@@ -1,10 +1,10 @@
-package me.remie.vulcan.leaguetasks.task.tasks.thieving;
+package leaguetasks.task.tasks.thieving;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import me.remie.vulcan.leaguetasks.LeagueScript;
-import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import leaguetasks.LeagueScript;
+import leaguetasks.task.LeagueTask;
 import simple.hooks.filters.SimpleSkills;
 import simple.hooks.wrappers.SimpleItem;
 import simple.hooks.wrappers.SimpleNpc;

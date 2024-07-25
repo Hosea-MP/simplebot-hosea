@@ -1,10 +1,10 @@
-package me.remie.vulcan.leaguetasks.task.tasks;
+package leaguetasks.task.tasks;
 
-import me.remie.vulcan.leaguetasks.LeagueScript;
-import me.remie.vulcan.leaguetasks.helpers.ItemDetails;
-import me.remie.vulcan.leaguetasks.helpers.shop.ShopHelper;
-import me.remie.vulcan.leaguetasks.helpers.shop.ShopType;
-import me.remie.vulcan.leaguetasks.task.LeagueTask;
+import leaguetasks.LeagueScript;
+import leaguetasks.helpers.ItemDetails;
+import leaguetasks.helpers.shop.ShopHelper;
+import leaguetasks.helpers.shop.ShopType;
+import leaguetasks.task.LeagueTask;
 import simple.hooks.wrappers.SimpleItem;
 
 /**

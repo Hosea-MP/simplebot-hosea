@@ -1,4 +1,4 @@
-package me.remie.vulcan.leaguetasks.task.tasks.woodcutting;
+package leaguetasks.task.tasks.woodcutting;
 
 import simple.robot.utils.WorldArea;
 

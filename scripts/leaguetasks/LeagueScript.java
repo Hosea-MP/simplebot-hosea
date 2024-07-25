@@ -1,32 +1,32 @@
-package me.remie.vulcan.leaguetasks;
+package leaguetasks;
 
-import me.remie.vulcan.leaguetasks.data.LeagueScriptConstants;
-import me.remie.vulcan.leaguetasks.helpers.TeleporterScrollHelper;
-import me.remie.vulcan.leaguetasks.task.LeagueTask;
-import me.remie.vulcan.leaguetasks.task.tasks.CraftGhorrockTablet;
-import me.remie.vulcan.leaguetasks.task.tasks.EquipElementalStaff;
-import me.remie.vulcan.leaguetasks.task.tasks.EquipGodBook;
-import me.remie.vulcan.leaguetasks.task.tasks.EquipMithrilGloves;
-import me.remie.vulcan.leaguetasks.task.tasks.LunarIsleBank;
-import me.remie.vulcan.leaguetasks.task.tasks.OpenLeaguesMenu;
-import me.remie.vulcan.leaguetasks.task.tasks.agility.DraynorRooftopAgility;
-import me.remie.vulcan.leaguetasks.task.tasks.agility.TreeGnomeAgility;
-import me.remie.vulcan.leaguetasks.task.tasks.agility.VarrockRooftopAgility;
-import me.remie.vulcan.leaguetasks.task.tasks.emotes.EmoteExplore;
-import me.remie.vulcan.leaguetasks.task.tasks.emotes.EmoteUriTransformation;
-import me.remie.vulcan.leaguetasks.task.tasks.slayer.CheckSlayerTask;
-import me.remie.vulcan.leaguetasks.task.tasks.slayer.SlayerTaskDuradel;
-import me.remie.vulcan.leaguetasks.task.tasks.thieving.ThievingLevel20;
-import me.remie.vulcan.leaguetasks.task.tasks.thieving.ThievingPickpocketMan;
-import me.remie.vulcan.leaguetasks.task.tasks.thieving.ThievingStealSilk;
-import me.remie.vulcan.leaguetasks.task.tasks.travel.TravelDeathsDomain;
-import me.remie.vulcan.leaguetasks.task.tasks.travel.TravelFossilIsland;
-import me.remie.vulcan.leaguetasks.task.tasks.travel.TravelMosleHarmless;
-import me.remie.vulcan.leaguetasks.task.tasks.travel.TravelSpiritTrees;
-import me.remie.vulcan.leaguetasks.task.tasks.woodcutting.tasks.ChopMagicLogs;
-import me.remie.vulcan.leaguetasks.task.tasks.woodcutting.tasks.ChopNormalLogs;
-import me.remie.vulcan.leaguetasks.task.tasks.woodcutting.tasks.ChopWillowLogs;
-import me.remie.vulcan.leaguetasks.utils.LeaguePanel;
+import leaguetasks.data.LeagueScriptConstants;
+import leaguetasks.helpers.TeleporterScrollHelper;
+import leaguetasks.task.LeagueTask;
+import leaguetasks.task.tasks.CraftGhorrockTablet;
+import leaguetasks.task.tasks.EquipElementalStaff;
+import leaguetasks.task.tasks.EquipGodBook;
+import leaguetasks.task.tasks.EquipMithrilGloves;
+import leaguetasks.task.tasks.LunarIsleBank;
+import leaguetasks.task.tasks.OpenLeaguesMenu;
+import leaguetasks.task.tasks.agility.DraynorRooftopAgility;
+import leaguetasks.task.tasks.agility.TreeGnomeAgility;
+import leaguetasks.task.tasks.agility.VarrockRooftopAgility;
+import leaguetasks.task.tasks.emotes.EmoteExplore;
+import leaguetasks.task.tasks.emotes.EmoteUriTransformation;
+import leaguetasks.task.tasks.slayer.CheckSlayerTask;
+import leaguetasks.task.tasks.slayer.SlayerTaskDuradel;
+import leaguetasks.task.tasks.thieving.ThievingLevel20;
+import leaguetasks.task.tasks.thieving.ThievingPickpocketMan;
+import leaguetasks.task.tasks.thieving.ThievingStealSilk;
+import leaguetasks.task.tasks.travel.TravelDeathsDomain;
+import leaguetasks.task.tasks.travel.TravelFossilIsland;
+import leaguetasks.task.tasks.travel.TravelMosleHarmless;
+import leaguetasks.task.tasks.travel.TravelSpiritTrees;
+import leaguetasks.task.tasks.woodcutting.tasks.ChopMagicLogs;
+import leaguetasks.task.tasks.woodcutting.tasks.ChopNormalLogs;
+import leaguetasks.task.tasks.woodcutting.tasks.ChopWillowLogs;
+import leaguetasks.utils.LeaguePanel;
 
 import net.runelite.api.ChatMessageType;
 import simple.hooks.scripts.Category;
@@ -56,7 +56,7 @@ import java.util.regex.Pattern;
  * @Discord reminisce <138751815847116800>
  */
 @ScriptManifest(author = "Reminisce", name = "RLeagues Tasks", category = Category.OTHER,
-        version = "0.0.1", description = "Completes a ton of leagues tasks", discord = "reminisce", servers = {"Vulcan"}, vip = true)
+        version = "0.0.1", description = "Completes a ton of leagues tasks", discord = "reminisce", servers = {"Vulcan"}, vip = false)
 public class LeagueScript extends Script implements LoopingScript, MouseListener {
 
     private long startTime;
