@@ -204,7 +204,7 @@ Class SimplePair<K,V>
             
             Parameters:
             
-            `o` - the `Object` to test for equality with this `Pair`
+            `o` - the `Object` to rScripts.allInOne for equality with this `Pair`
             
             Returns:
             
